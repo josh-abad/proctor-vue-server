@@ -33,7 +33,6 @@ connectToMongo()
 const app = express()
 
 app.use(cors())
-app.use(history())
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.json())
 app.use(middleware.requestLogger)
@@ -44,6 +43,7 @@ app.use('/api/exam-items', examItemsRouter)
 app.use('/api/submit-exam', submitExamRouter)
 app.use('/api/login', loginRouter)
 
+app.use(history())
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
