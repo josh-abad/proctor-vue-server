@@ -10,10 +10,11 @@ import submitExamRouter from './controllers/submitExam'
 import loginRouter from './controllers/login'
 import logger from './utils/logger'
 import middleware from './utils/middleware'
-// import history from 'connect-history-api-fallback'
+import history from 'connect-history-api-fallback'
+import path from 'path'
 
 const connectToMongo = async () => {
-  logger.info('connecting to', config.MONGODB_URI)
+  logger.info('connecting to', config.MONGODB_URI as string)
   try {
     await mongoosee.connect(config.MONGODB_URI as string, {
       useNewUrlParser: true,
@@ -32,8 +33,8 @@ connectToMongo()
 const app = express()
 
 app.use(cors())
-// app.use(history())
-// app.use(express.static('build/dist'))
+app.use(history())
+app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.json())
 app.use(middleware.requestLogger)
 

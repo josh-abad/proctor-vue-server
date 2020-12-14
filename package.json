@@ -7,8 +7,9 @@
     "start": "cross-env NODE_ENV=production node build/index.js",
     "dev": "cross-env NODE_ENV=development ts-node-dev index.ts",
     "tsc": "tsc",
+    "prebuild": "npm run build:ui",
     "build": "tsc --project ./",
-    "build:ui": "rm -rf build/dist && cd ../frontend && npm run build --prod && cp -r dist ../backend/build/",
+    "build:ui": "rm -rf dist/public && cd ../frontend && npm run build --prod && cp -r dist ../backend/dist/public",
     "lint": "eslint .",
     "test": "NODE_ENV=test jest --verbose --runInBand"
   },
