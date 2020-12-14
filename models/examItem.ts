@@ -1,6 +1,6 @@
-import { Schema, Document, Model, model } from 'mongoose'
+import { Schema, Document, model } from 'mongoose'
 
-interface ExamItem extends Document {
+export interface ExamItemDocument extends Document {
     question: string,
     choices: string[],
     answer: string,
@@ -34,13 +34,11 @@ const examItemSchema = new Schema({
 })
 
 examItemSchema.set('toJSON', {
-  transform: (_document: Document, returnedObject: ExamItem) => {
+  transform: (_document: Document, returnedObject: ExamItemDocument) => {
     returnedObject.id = returnedObject._id
     delete returnedObject._id
     delete returnedObject.__v
   }
 })
 
-const ExamItemModel: Model<ExamItem> = model('ExamItem', examItemSchema)
-
-export default ExamItemModel
+export default model<ExamItemDocument>('ExamItem', examItemSchema)

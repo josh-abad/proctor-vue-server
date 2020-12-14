@@ -1,8 +1,8 @@
-import User from '../models/user'
+import User, { UserDocument } from '../models/user'
 
-const usersInDb = async (): Promise<any[]> => {
+const usersInDb = async (): Promise<UserDocument[]> => {
   const users = await User.find({})
-  return users.map(u => u.toJSON())
+  return users
 }
 
 export default {

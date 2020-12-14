@@ -1,6 +1,6 @@
-import { Schema, Document, Model, model } from 'mongoose'
+import { Schema, Document, model } from 'mongoose'
 
-interface User extends Document {
+export interface UserDocument extends Document {
     name: {
       first: string,
       last: string
@@ -38,18 +38,16 @@ const userSchema = new Schema({
   }]
 })
 
-userSchema.virtual('fullName').get(function (this: User) {
+userSchema.virtual('fullName').get(function (this: UserDocument) {
   return `${this.name.first} ${this.name.last}`
 })
 
 userSchema.set('toJSON', {
-  transform: (_document: Document, returnedObject: User) => {
+  transform: (_document: Document, returnedObject: UserDocument) => {
     returnedObject.id = returnedObject._id
     delete returnedObject._id
     delete returnedObject.__v
   }
 })
 
-const UserModel: Model<User> = model('User', userSchema)
-
-export default UserModel
+export default model<UserDocument>('User', userSchema)

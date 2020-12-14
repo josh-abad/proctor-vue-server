@@ -1,6 +1,6 @@
-import { Schema, Document, Model, model } from 'mongoose'
+import { Schema, Document, model } from 'mongoose'
 
-interface Course extends Document {
+export interface CourseDocument extends Document {
    name: string
 }
 
@@ -12,13 +12,11 @@ const courseSchema = new Schema({
 })
 
 courseSchema.set('toJSON', {
-  transform: (_document: Document, returnedObject: Course) => {
+  transform: (_document: Document, returnedObject: CourseDocument) => {
     returnedObject.id = returnedObject._id
     delete returnedObject._id
     delete returnedObject.__v
   }
 })
 
-const Course: Model<Course> = model('Course', courseSchema)
-
-export default Course
+export default model<CourseDocument>('Course', courseSchema)

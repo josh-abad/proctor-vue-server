@@ -1,6 +1,6 @@
 import { Schema, Document, Model, model } from 'mongoose'
 
-interface ExamResult extends Document {
+export interface ExamResultDocument extends Document {
     questions: string[],
     points: number[],
     user: string,
@@ -27,13 +27,11 @@ const examResultSchema = new Schema({
 })
 
 examResultSchema.set('toJSON', {
-  transform: (_document: Document, returnedObject: ExamResult) => {
+  transform: (_document: Document, returnedObject: ExamResultDocument) => {
     returnedObject.id = returnedObject._id
     delete returnedObject._id
     delete returnedObject.__v
   }
 })
 
-const ExamResultModel: Model<ExamResult> = model('ExamResult', examResultSchema)
-
-export default ExamResultModel
+export default model<ExamResultDocument>('ExamResult', examResultSchema)
