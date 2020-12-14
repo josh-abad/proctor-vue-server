@@ -4,13 +4,13 @@
   "description": "Backend application for CS Design using TypeScript, Express, and MongoDB",
   "main": "index.ts",
   "scripts": {
-    "start": "node build/index.js",
-    "dev": "ts-node-dev index.ts",
+    "start": "cross-env NODE_ENV=production node build/index.js",
+    "dev": "cross-env NODE_ENV=development ts-node-dev index.ts",
     "tsc": "tsc",
     "build": "tsc --project ./",
     "build:ui": "rm -rf build/dist && cd ../frontend && npm run build --prod && cp -r dist ../backend/build/",
     "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_ENV=test jest --verbose --runInBand"
   },
   "author": "Joshua Timothy E. Abad",
   "license": "ISC",
@@ -29,12 +29,18 @@
     "@types/connect-history-api-fallback": "^1.3.3",
     "@types/cors": "^2.8.8",
     "@types/express": "^4.17.9",
+    "@types/jest": "^26.0.19",
     "@types/jsonwebtoken": "^8.5.0",
     "@types/mongoose": "^5.10.2",
     "@types/node": "^14.14.10",
+    "@types/supertest": "^2.0.10",
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
+    "cross-env": "^7.0.3",
     "eslint": "^7.15.0",
+    "jest": "^26.6.3",
+    "supertest": "^6.0.1",
+    "ts-jest": "^26.4.4",
     "ts-node-dev": "^1.0.0",
     "typescript": "^4.1.2"
   }
