@@ -8,11 +8,12 @@ import coursesRouter from './controllers/courses'
 import examItemsRouter from './controllers/examItems'
 import submitExamRouter from './controllers/submitExam'
 import loginRouter from './controllers/login'
+import logger from './utils/logger'
 import middleware from './utils/middleware'
 // import history from 'connect-history-api-fallback'
 
 const connectToMongo = async () => {
-  console.log('connecting to', config.MONGODB_URI)
+  logger.info('connecting to', config.MONGODB_URI)
   try {
     await mongoosee.connect(config.MONGODB_URI as string, {
       useNewUrlParser: true,
@@ -20,9 +21,9 @@ const connectToMongo = async () => {
       useFindAndModify: false,
       useCreateIndex: true
     })
-    console.log('connected to MongoDB')
+    logger.info('connected to MongoDB')
   } catch (error) {
-    console.error('error connecting to MongoDB:', (error as Error).message)
+    logger.error('error connecting to MongoDB:', (error as Error).message)
   }
 }
 
