@@ -6,7 +6,8 @@ interface User extends Document {
       last: string
     },
     username: string,
-    passwordHash: string
+    passwordHash: string,
+    courses: string[]
 }
 
 const userSchema = new Schema({
@@ -28,7 +29,13 @@ const userSchema = new Schema({
     type: String,
     required: true,
     select: false
-  }
+  },
+  courses: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Course',
+    required: false,
+    default: []
+  }]
 })
 
 userSchema.virtual('fullName').get(function (this: User) {

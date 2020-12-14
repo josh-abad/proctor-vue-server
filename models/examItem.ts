@@ -1,4 +1,3 @@
-
 import { Schema, Document, Model, model } from 'mongoose'
 
 interface ExamItem extends Document {
@@ -6,7 +5,7 @@ interface ExamItem extends Document {
     choices: string[],
     answer: string,
     examType: 'text' | 'multiple choice' | 'multiple answers',
-    courseId: string
+    course: string
 }
 
 const examItemSchema = new Schema({
@@ -21,13 +20,14 @@ const examItemSchema = new Schema({
   },
   answer: {
     type: String,
-    required: true
+    required: true,
+    select: false
   },
   examType: {
     type: String,
     required: true
   },
-  courseId: {
+  course: {
     type: Schema.Types.ObjectId,
     ref: 'Course'
   }

@@ -15,12 +15,12 @@ usersRouter.post('/', async (request, response) => {
     username: body.username,
     passwordHash
   })
-  const savedPerson = await user.save()
-  response.json(savedPerson.toJSON())
+  const savedUser = await user.save()
+  response.json(savedUser.toJSON())
 })
 
 usersRouter.get('/', async (_request, response) => {
-  const users = await User.find({})
+  const users = await User.find({}).populate('courses')
   response.json(users)
 })
 
@@ -36,18 +36,15 @@ usersRouter.get('/:id', async (request, response) => {
 usersRouter.put('/:id', async (request, response) => {
   const body = request.body
 
-  const user = {
-    name: body.name,
-    username: body.username,
-    passwordHash: body.passwordHash
-  }
+  const oldUser = await User.findById(request.params.id)
+  if (oldUser) {
+    oldUser.name = body.name || oldUser.name
+    oldUser.username = body.username || oldUser.username
+    oldUser.courses = body.courses || oldUser.courses
 
-  const updatedPerson = await User.findByIdAndUpdate(request.params.id, user, {
-    new: true,
-    runValidators: true,
-    context: 'query'
-  })
-  response.json(updatedPerson)
+    const updatedUser = oldUser.save()
+    response.json(updatedUser)
+  }
 })
 
 usersRouter.delete('/:id', async (request, response) => {
