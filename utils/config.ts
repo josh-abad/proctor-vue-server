@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === 'test') {
   MONGODB_URI = process.env.TEST_MONGODB_URI
 }
 
-const SECRET = process.env.SECRET
+const SECRET = process.env.SECRET as string
 
 export default {
   PORT,
