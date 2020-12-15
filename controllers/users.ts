@@ -42,8 +42,8 @@ usersRouter.put('/:id', async (request, response) => {
     oldUser.username = body.username || oldUser.username
     oldUser.courses = body.courses || oldUser.courses
 
-    const updatedUser = oldUser.save()
-    response.json(updatedUser)
+    const updatedUser = await oldUser.save()
+    response.json(updatedUser.toJSON())
   }
 })
 
