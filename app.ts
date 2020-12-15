@@ -5,30 +5,27 @@ import mongoosee from 'mongoose'
 import config from './utils/config'
 import usersRouter from './controllers/users'
 import coursesRouter from './controllers/courses'
-import examItemsRouter from './controllers/examItems'
-import submitExamRouter from './controllers/submitExam'
+import examsRouter from './controllers/exams'
+import examItemsRouter from './controllers/exam_items'
+import examResultsRouter from './controllers/exam_results'
 import loginRouter from './controllers/login'
 import logger from './utils/logger'
 import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
 import path from 'path'
 
-const connectToMongo = async () => {
-  logger.info('connecting to', config.MONGODB_URI as string)
-  try {
-    await mongoosee.connect(config.MONGODB_URI as string, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useFindAndModify: false,
-      useCreateIndex: true
-    })
-    logger.info('connected to MongoDB')
-  } catch (error) {
-    logger.error('error connecting to MongoDB:', (error as Error).message)
-  }
-}
+logger.info('connecting to', config.MONGODB_URI as string)
 
-connectToMongo()
+mongoosee.connect(config.MONGODB_URI as string, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  useFindAndModify: false,
+  useCreateIndex: true
+}).then(() => {
+  logger.info('connected to MongoDB')
+}).catch(error => {
+  logger.error('error connecting to MongoDB:', (error as Error).message)
+})
 
 const app = express()
 
@@ -39,8 +36,9 @@ app.use(middleware.requestLogger)
 
 app.use('/api/users', usersRouter)
 app.use('/api/courses', coursesRouter)
+app.use('/api/exams', examsRouter)
 app.use('/api/exam-items', examItemsRouter)
-app.use('/api/submit-exam', submitExamRouter)
+app.use('/api/exam-results', examResultsRouter)
 app.use('/api/login', loginRouter)
 
 app.use(history())

@@ -1,14 +1,19 @@
 import { Schema, Document, model } from 'mongoose'
 
 export interface CourseDocument extends Document {
-   name: string
+  name: string;
+  exams: string[];
 }
 
 const courseSchema = new Schema({
   name: {
     type: String,
     required: true
-  }
+  },
+  exams: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Exam'
+  }]
 })
 
 courseSchema.set('toJSON', {
