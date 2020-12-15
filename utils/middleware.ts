@@ -13,16 +13,22 @@ const unknownEndpoint = (_request: Request, response: Response): void => {
   response.status(404).send({ error: 'unknown endpoint'})
 }
 
-const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction): void => {
-  logger.error(error.message)
-    
+const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction): Response | void => {
   if (error.name === 'CastError') {
-    response.status(400).send({ error: 'malformatted id'})
-    return
+    return response.status(400).send({
+      error: 'malformatted id'
+    })
   } else if (error.name === 'ValidationError') {
-    response.status(400).send({ error: error.message })
-    return
+    return response.status(400).json({
+      error: error.message
+    })
+  } else if (error.name === 'JsonWebTokenError') {
+    return response.status(401).json({
+      error: 'invalid token'
+    })
   }
+
+  logger.error(error.message)
 
   next(error)
 }
