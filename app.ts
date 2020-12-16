@@ -13,6 +13,7 @@ import logger from './utils/logger'
 import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
 import path from 'path'
+import compression from 'compression'
 
 logger.info('connecting to', config.MONGODB_URI as string)
 
@@ -29,6 +30,7 @@ mongoosee.connect(config.MONGODB_URI as string, {
 
 const app = express()
 
+app.use(compression())
 app.use(cors())
 app.use(express.static(path.join(__dirname, 'public')))
 app.use(express.json())
