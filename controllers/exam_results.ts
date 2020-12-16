@@ -1,31 +1,20 @@
-import { Request, Response, Router } from 'express'
-import jwt from 'jsonwebtoken'
+import { Response, Router } from 'express'
 import config from '../utils/config'
 import User from '../models/user'
 import Exam from '../models/exam'
 import ExamItem from '../models/exam_item'
 import ExamResult from '../models/exam_result'
+import ExamAttempt from '../models/exam_attempt'
+import jwt from 'jsonwebtoken'
+import helper, { AttemptToken } from './controller_helper'
 
 const examResultsRouter = Router()
 
-const getTokenFrom = (request: Request) => {
-  const authorization = request.get('authorization')
-  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
-    return authorization.substring(7)
-  }
-  return null
-}
-
-interface TokenInterface {
-  username: string;
-  id: string;
-}
-
 examResultsRouter.post('/', async (request, response): Promise<Response | void> => {
   const body = request.body
-  const token = getTokenFrom(request)
+  const token = helper.getTokenFrom(request)
   const decodedToken = jwt.verify(token as string, config.SECRET)
-  if (!token || !(decodedToken as TokenInterface).id) {
+  if (!token || !((decodedToken as AttemptToken).attemptId && (decodedToken as AttemptToken).userId)) {
     return response.status(401).json({ error: 'token missing or invalid' })
   }
 
@@ -40,20 +29,35 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
     }
   }
 
-  const user = await User.findById((decodedToken as TokenInterface).id)
+  const user = await User.findById((decodedToken as AttemptToken).userId)
   const exam = await Exam.findById(body.examId)
+  const attempt = await ExamAttempt.findById((decodedToken as AttemptToken).attemptId)
   
   const examResult = new ExamResult({
+    scores,
     user: user?._id,
     exam: exam?._id,
-    scores
+    attempt: attempt?._id
   })
+
+  if (attempt) {
+    attempt.examResult = examResult._id
+    attempt.status = 'completed'
+    attempt.submittedDate = new Date()
+  }
+  await attempt?.save()
 
   const savedExamResult = await examResult.save()
   response.json(savedExamResult.toJSON())
 })
 
-examResultsRouter.get('/', async (_request, response) => {
+examResultsRouter.get('/', async (request, response) => {
+  const userId = request.query.userId
+  if (userId) {
+    const examResultsByUser = await ExamResult.find({ user: userId as string }).populate('exam').populate('user')
+    response.json(examResultsByUser)
+    return
+  }
   const examResult = await ExamResult.find({}).populate('exam').populate('user')
   response.json(examResult)
 })

@@ -8,6 +8,7 @@ import coursesRouter from './controllers/courses'
 import examsRouter from './controllers/exams'
 import examItemsRouter from './controllers/exam_items'
 import examResultsRouter from './controllers/exam_results'
+import examAttemptsRouter from './controllers/exam_attempts'
 import loginRouter from './controllers/login'
 import logger from './utils/logger'
 import middleware from './utils/middleware'
@@ -40,6 +41,7 @@ app.use('/api/users', usersRouter)
 app.use('/api/courses', coursesRouter)
 app.use('/api/exams', examsRouter)
 app.use('/api/exam-items', examItemsRouter)
+app.use('/api/exam-attempts', examAttemptsRouter)
 app.use('/api/exam-results', examResultsRouter)
 app.use('/api/login', loginRouter)
 

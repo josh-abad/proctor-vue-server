@@ -3,7 +3,8 @@ import { Schema, Document, model } from 'mongoose'
 export interface ExamResultDocument extends Document {
   exam: string,
   user: string,
-  scores: Map<string, number>
+  scores: Map<string, number>,
+  attempt: string
 }
 
 const examResultSchema = new Schema({
@@ -18,7 +19,11 @@ const examResultSchema = new Schema({
   scores: [{
     type: Map,
     of: Number
-  }]
+  }],
+  attempt: {
+    type: Schema.Types.ObjectId,
+    ref: 'ExamAttempt'
+  }
 })
 
 examResultSchema.set('toJSON', {
