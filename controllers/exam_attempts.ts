@@ -39,13 +39,15 @@ examAttemptsRouter.post('/', async (request, response): Promise<Response | void>
 
   const startDate = new Date()
   const endDate = new Date()
+  endDate.setSeconds(endDate.getSeconds() + exam?.duration)
 
   const examAttempt = new ExamAttempt({
     user: user?._id,
     status: 'in-progress',
     startDate,
     endDate,
-    exam: exam?._id
+    exam: exam?._id,
+    examTotal: exam?.questions.length
   })
 
   const savedExamAttempt = await examAttempt.save()

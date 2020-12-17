@@ -1,11 +1,27 @@
 import { Schema, Document, model } from 'mongoose'
 
+export interface Score {
+  examItem: string,
+  points: number
+}
+
 export interface ExamResultDocument extends Document {
   exam: string,
   user: string,
-  scores: Map<string, number>,
+  scores: Score[],
   attempt: string
 }
+
+const scoreSchema = new Schema({
+  examItem: {
+    type: Schema.Types.ObjectId,
+    ref: 'ExamItem'
+  },
+  points: {
+    type: Number,
+    required: true
+  }
+})
 
 const examResultSchema = new Schema({
   exam: {
@@ -16,10 +32,7 @@ const examResultSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
-  scores: [{
-    type: Map,
-    of: Number
-  }],
+  scores: [scoreSchema],
   attempt: {
     type: Schema.Types.ObjectId,
     ref: 'ExamAttempt'

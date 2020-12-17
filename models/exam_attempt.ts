@@ -7,7 +7,9 @@ export interface ExamAttemptDocument extends Document {
   startDate: Date,
   endDate: Date,
   submittedDate: Date,
-  examResult: string
+  examResult: string,
+  score: number,
+  examTotal: number
 }
 
 const examAttemptSchema = new Schema({
@@ -38,6 +40,15 @@ const examAttemptSchema = new Schema({
   examResult: {
     type: Schema.Types.ObjectId,
     ref: 'ExamResult'
+  },
+  score: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  examTotal: {
+    type: Number,
+    required: true
   }
 })
 

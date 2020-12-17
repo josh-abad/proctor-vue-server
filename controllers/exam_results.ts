@@ -3,7 +3,7 @@ import config from '../utils/config'
 import User from '../models/user'
 import Exam from '../models/exam'
 import ExamItem from '../models/exam_item'
-import ExamResult from '../models/exam_result'
+import ExamResult, { Score } from '../models/exam_result'
 import ExamAttempt from '../models/exam_attempt'
 import jwt from 'jsonwebtoken'
 import helper, { AttemptToken } from './controller_helper'
@@ -19,14 +19,14 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
   }
 
   const answers = body.answers
-  const scores: { [key: string]: number } = {}
+  const scores: Score[] = []
 
   for (const answer of answers) {
     const examItem = await ExamItem.findById(answer.questionId).select('answer')
-    scores[examItem?._id] = 0
-    if (examItem?.answer === answer.answer) {
-      scores[examItem?._id] += 1
-    }
+    scores.push({
+      examItem: examItem?._id,
+      points: examItem?.answer === answer.answer ? 1 : 0 
+    })
   }
 
   const user = await User.findById((decodedToken as AttemptToken).userId)
@@ -44,11 +44,16 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
     attempt.examResult = examResult._id
     attempt.status = 'completed'
     attempt.submittedDate = new Date()
+    attempt.score = scores.reduce((x: number, y: Score) => x + y.points, 0)
   }
-  await attempt?.save()
 
+  const savedAttempt = await attempt?.save()
   const savedExamResult = await examResult.save()
-  response.json(savedExamResult.toJSON())
+
+  response.json({
+    examResult: savedExamResult.toJSON(),
+    attempt: savedAttempt?.toJSON()
+  })
 })
 
 examResultsRouter.get('/', async (request, response) => {
