@@ -1,13 +1,14 @@
 import { Schema, Document, model } from 'mongoose'
 
 export interface UserDocument extends Document {
-    name: {
-      first: string,
-      last: string
-    },
-    username: string,
-    passwordHash: string,
-    courses: string[]
+  name: {
+    first: string,
+    last: string
+  },
+  username: string,
+  passwordHash: string,
+  courses: string[],
+  role: 'student' | 'coordinator' | 'admin'
 }
 
 const userSchema = new Schema({
@@ -35,7 +36,11 @@ const userSchema = new Schema({
     ref: 'Course',
     required: false,
     default: []
-  }]
+  }],
+  role: {
+    type: String,
+    required: true
+  }
 })
 
 userSchema.virtual('fullName').get(function (this: UserDocument) {
