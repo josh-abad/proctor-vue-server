@@ -3,6 +3,7 @@ import { Schema, Document, model } from 'mongoose'
 export interface CourseDocument extends Document {
   name: string;
   exams: string[];
+  coordinator: string;
 }
 
 const courseSchema = new Schema({
@@ -13,7 +14,11 @@ const courseSchema = new Schema({
   exams: [{
     type: Schema.Types.ObjectId,
     ref: 'Exam'
-  }]
+  }],
+  coordinator: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }
 })
 
 courseSchema.set('toJSON', {

@@ -5,30 +5,36 @@ import User from '../models/user'
 
 const loginRouter = Router()
 
-loginRouter.post('/', (request, response) => {
+loginRouter.post('/', async (request, response) => {
   const body = request.body
 
-  User.findOne({ username: body.username }).select('+passwordHash').exec(async (_error, user) => {
-    const passwordCorrect = user === null
-      ? false
-      : await bcrypt.compare(body.password, user.passwordHash)
+  const user = await User.findOne({ username: body.username }).select('+passwordHash')
+  const passwordCorrect = user === null
+    ? false
+    : await bcrypt.compare(body.password, user.passwordHash)
 
-    if (!(user && passwordCorrect)) {
-      response.status(401).json({
-        error: 'invalid username or password'
-      })
-      return
-    }
+  if (!(user && passwordCorrect)) {
+    response.status(401).json({
+      error: 'invalid username or password'
+    })
+    return
+  }
 
-    const userForToken = {
-      username: user.username,
-      id: user._id,
-      role: user.role
-    }
+  const userForToken = {
+    username: user.username,
+    id: user._id,
+    role: user.role
+  }
 
-    const token = jwt.sign(userForToken, process.env.SECRET as string)
+  const token = jwt.sign(userForToken, process.env.SECRET as string)
 
-    response.status(200).send({ token, id: user.id, username: user.username, name: user.name, courses: user.courses })
+  response.status(200).send({
+    token,
+    id: user.id,
+    username: user.username,
+    name: user.name,
+    courses: user.courses,
+    role: user.role
   })
 })
 
