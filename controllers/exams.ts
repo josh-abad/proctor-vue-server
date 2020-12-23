@@ -11,7 +11,7 @@ examsRouter.post('/', async (request, response) => {
 
   const exam = new Exam({
     label: body.label,
-    questions: body.questions,
+    questions: body.questionIds,
     length: body.length || body.questions.length,
     duration: body.duration,
     random: body.random,
