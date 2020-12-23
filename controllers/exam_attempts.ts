@@ -28,7 +28,7 @@ examAttemptsRouter.post('/', async (request, response): Promise<Response | void>
     return
   }
 
-  const pastAttempts = await ExamAttempt.find({ user: user._id })
+  const pastAttempts = await ExamAttempt.find({ user: user._id, exam: exam._id })
 
   if (pastAttempts.length >= exam.maxAttempts) {
     response.status(401).json({
