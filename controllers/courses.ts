@@ -24,7 +24,7 @@ coursesRouter.post('/', async (request, response) => {
   await coordinator.save()
 
   const savedCourse = await course.save()
-  response.json(savedCourse.toJSON())
+  response.json(await savedCourse.populate('coordinator').execPopulate())
 })
 
 coursesRouter.get('/', async (request, response) => {
@@ -63,8 +63,18 @@ coursesRouter.put('/:id', async (request, response) => {
 })
 
 coursesRouter.delete('/:id', async (request, response) => {
-  await Course.findByIdAndDelete(request.params.id)
+  const course = await Course.findById(request.params.id)
+  console.log(course)
+  
+  const coordinator = await User.findById(course?.coordinator)
+  if (coordinator) {
+    coordinator.courses = coordinator.courses.filter(courseId => courseId !== course?._id)
+    await coordinator?.save()
+  }
+  
+  await course?.delete()
   response.status(204).end()
+  
 })
 
 export default coursesRouter
