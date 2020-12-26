@@ -24,7 +24,7 @@ examsRouter.post('/', async (request, response) => {
     course.exams = course?.exams.concat(savedExam._id)
     await course.save()
   }
-  response.json(savedExam.toJSON())
+  response.json(await savedExam.populate('course').execPopulate())
 })
 
 examsRouter.get('/', async (_request, response) => {
