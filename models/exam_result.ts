@@ -1,7 +1,7 @@
 import { Schema, Document, model } from 'mongoose'
 
 export interface Score {
-  examItem: string,
+  question: string,
   points: number
 }
 
@@ -13,9 +13,9 @@ export interface ExamResultDocument extends Document {
 }
 
 const scoreSchema = new Schema({
-  examItem: {
-    type: Schema.Types.ObjectId,
-    ref: 'ExamItem'
+  question: {
+    type: String,
+    required: true
   },
   points: {
     type: Number,

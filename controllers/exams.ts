@@ -11,8 +11,8 @@ examsRouter.post('/', async (request, response) => {
 
   const exam = new Exam({
     label: body.label,
-    questions: body.questionIds,
-    length: body.length || body.questions.length,
+    examItems: body.examItems,
+    length: body.length || body.examItems.length,
     duration: body.duration,
     random: body.random,
     course: course?._id,
@@ -28,7 +28,7 @@ examsRouter.post('/', async (request, response) => {
 })
 
 examsRouter.get('/', async (_request, response) => {
-  const exam = await Exam.find({}).populate('questions').populate('course')
+  const exam = await Exam.find({}).populate('course')
   response.json(exam)
 })
 

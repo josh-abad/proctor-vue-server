@@ -47,7 +47,7 @@ examAttemptsRouter.post('/', async (request, response): Promise<Response | void>
     startDate,
     endDate,
     exam: exam?._id,
-    examTotal: exam?.questions.length
+    examTotal: exam?.examItems.length
   })
 
   const savedExamAttempt = await examAttempt.save()

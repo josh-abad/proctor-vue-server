@@ -1,13 +1,40 @@
 import { Schema, Document, model } from 'mongoose'
 
+interface ExamItem {
+  question: string,
+  choices: string[],
+  answer: string,
+  questionType: 'text' | 'multiple choice' | 'multiple answers'
+}
+
+const examItemSchema = new Schema({
+  question: {
+    type: String,
+    required: true
+  },
+  choices: [{
+    type: String,
+    required: false,
+    default: []
+  }],
+  answer: {
+    type: String,
+    required: true
+  },
+  questionType: {
+    type: String,
+    required: true
+  }
+})
+
 export interface ExamDocument extends Document {
-    label: string,
-    questions: string[],
-    length: number,
-    duration: number,
-    random: boolean,
-    course: string,
-    maxAttempts: number
+  label: string,
+  examItems: ExamItem[],
+  length: number,
+  duration: number,
+  random: boolean,
+  course: string,
+  maxAttempts: number
 }
 
 const examSchema = new Schema({
@@ -15,11 +42,7 @@ const examSchema = new Schema({
     type: String,
     required: true
   },
-  questions: [{
-    type: Schema.Types.ObjectId,
-    ref: 'ExamItem',
-    required: true
-  }],
+  examItems: [examItemSchema],
   length: {
     type: Number,
     required: true
