@@ -23,7 +23,6 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
 
   for (const answer of answers) {
     const examItem = exam?.examItems.find(ei => ei.question === answer.question)
-    // const examItem = await ExamItem.findById(answer.question).select('answer')
     scores.push({
       question: examItem?.question as string,
       points: examItem?.answer === answer.answer ? 1 : 0 

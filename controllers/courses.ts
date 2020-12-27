@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import Course from '../models/course'
+import Course, { CourseDocument } from '../models/course'
 import User from '../models/user'
 
 const coursesRouter = Router()
@@ -28,11 +28,23 @@ coursesRouter.post('/', async (request, response) => {
 })
 
 coursesRouter.get('/', async (request, response) => {
-  const coordinatorId = request.query.coordinatorId
-  if (coordinatorId) {
-    const coursesByCoordinator = await Course.find({ coordinator: coordinatorId as string }).populate('coordinator')
-    response.json(coursesByCoordinator)
-    return
+  const userId = request.query.userId
+  if (userId) {
+    const user = await User.findById(userId)
+    if (user) {
+      const coursesByUser: CourseDocument[] = []
+      for (const courseId of user.courses) {
+        const course = await Course.findById(courseId)
+        if (course) {
+          coursesByUser.push(course)
+        } else {
+          user.courses = user.courses.filter(id => id !== courseId)
+          await user.save()
+        }
+      }
+      response.json(coursesByUser)
+      return
+    }
   }
   const courses = await Course.find({}).populate('coordinator')
   response.json(courses)
