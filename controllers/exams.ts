@@ -1,13 +1,46 @@
-import { Router } from 'express'
+import { Response, Router } from 'express'
 import Course from '../models/course'
 import Exam from '../models/exam'
+import config from '../utils/config'
+import jwt from 'jsonwebtoken'
+import User from '../models/user'
+import helper, { UserToken } from './controller_helper'
 
 const examsRouter = Router()
 
-examsRouter.post('/', async (request, response) => {
+examsRouter.post('/', async (request, response): Promise<Response | void> => {
   const body = request.body
 
+  const token = helper.getTokenFrom(request)
+  
+  const decodedToken = jwt.verify(token as string, config.SECRET)
+  if (!token || !(decodedToken as UserToken).id) {
+    return response.status(401).json({ error: 'token missing or invalid' })
+  }
+
+  const user = await User.findById((decodedToken as UserToken).id)
   const course = await Course.findById(body.courseId)
+
+  if (!(course && user)) {
+    response.status(401).json({
+      'error': 'invalid user or course'
+    })
+    return
+  }
+
+  if (user.role === 'student') {
+    response.status(401).json({
+      'error': 'role does not permit creation of new exams'
+    })
+    return
+  }
+
+  if (user.role !== 'admin' && user.id !== course.coordinator.toString()) {
+    response.status(401).json({
+      'error': 'coordinator not assigned to course'
+    })
+    return
+  }
 
   const exam = new Exam({
     label: body.label,
