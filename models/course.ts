@@ -4,6 +4,7 @@ export interface CourseDocument extends Document {
   name: string;
   exams: string[];
   coordinator: string;
+  studentsEnrolled: string[];
 }
 
 const courseSchema = new Schema({
@@ -18,7 +19,11 @@ const courseSchema = new Schema({
   coordinator: {
     type: Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  studentsEnrolled: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }]
 })
 
 courseSchema.set('toJSON', {

@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import { Response, Router } from 'express'
 import Course, { CourseDocument } from '../models/course'
 import User from '../models/user'
 
@@ -59,19 +59,43 @@ coursesRouter.get('/:id', async (request, response) => {
   }
 })
 
-coursesRouter.put('/:id', async (request, response) => {
+coursesRouter.put('/:courseId', async (request, response): Promise<Response | void> => {
   const body = request.body
+  const course = await Course.findById(request.params.courseId)
 
-  const course = {
-    name: body.name
+  if (!course) {
+    return response.status(404).end()
   }
 
-  const updatedCourse = await Course.findByIdAndUpdate(request.params.id, course, {
-    new: true,
-    runValidators: true,
-    context: 'query'
-  })
-  response.json(updatedCourse)
+  const userId = body.userId
+  if (userId) {
+    const user = await User.findById(userId)
+
+    if (!user) {
+      return response.status(401).json({
+        error: 'User not found.'
+      })
+    }
+
+    if (user.role !== 'student') {
+      return response.status(401).json({
+        error: 'User is not a student.'
+      })
+    }
+
+    if (user.courses.includes(course.id)) {
+      return response.status(401).json({
+        error: 'Student is already enrolled in course.'
+      })
+    }
+
+    user.courses.push(course._id)
+    await user.save()
+
+    course.studentsEnrolled.push(user._id)
+    const updatedCourse = await course.save()
+    return response.json(await updatedCourse.populate('coordinator').execPopulate())
+  }
 })
 
 coursesRouter.delete('/:id', async (request, response) => {
