@@ -17,7 +17,9 @@ coursesRouter.post('/', async (request, response) => {
 
   const course = new Course({
     name: body.name,
-    coordinator: coordinator._id
+    description: body.description,
+    coordinator: coordinator._id,
+    weeks: body.weeks
   })
 
   coordinator.courses.push(course._id)

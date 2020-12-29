@@ -2,13 +2,19 @@ import { Schema, Document, model } from 'mongoose'
 
 export interface CourseDocument extends Document {
   name: string;
+  description: string;
   exams: string[];
   coordinator: string;
   studentsEnrolled: string[];
+  weeks: number;
 }
 
 const courseSchema = new Schema({
   name: {
+    type: String,
+    required: true
+  },
+  description: {
     type: String,
     required: true
   },
@@ -23,7 +29,11 @@ const courseSchema = new Schema({
   studentsEnrolled: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
-  }]
+  }],
+  weeks: {
+    type: Number,
+    required: true
+  }
 })
 
 courseSchema.set('toJSON', {

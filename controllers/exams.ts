@@ -49,7 +49,8 @@ examsRouter.post('/', async (request, response): Promise<Response | void> => {
     duration: body.duration,
     random: body.random,
     course: course?._id,
-    maxAttempts: body.maxAttempts
+    maxAttempts: body.maxAttempts,
+    week: body.week
   })
 
   const savedExam = await exam.save()

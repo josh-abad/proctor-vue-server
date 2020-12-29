@@ -34,7 +34,8 @@ export interface ExamDocument extends Document {
   duration: number,
   random: boolean,
   course: string,
-  maxAttempts: number
+  maxAttempts: number,
+  week: number
 }
 
 const examSchema = new Schema({
@@ -61,6 +62,10 @@ const examSchema = new Schema({
     ref: 'Course'
   },
   maxAttempts: {
+    type: Number,
+    required: true
+  },
+  week: {
     type: Number,
     required: true
   }
