@@ -1,5 +1,6 @@
 import { Response, Router } from 'express'
 import Course, { CourseDocument } from '../models/course'
+import exam from '../models/exam'
 import User from '../models/user'
 
 const coursesRouter = Router()
@@ -65,10 +66,12 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
   const body = request.body
   const course = await Course.findById(request.params.courseId)
 
+  // Course doesn't exist
   if (!course) {
     return response.status(404).end()
   }
 
+  // If request contains a userId, it's a request for enrollment
   const userId = body.userId
   if (userId) {
     const user = await User.findById(userId)
@@ -102,15 +105,35 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
 
 coursesRouter.delete('/:id', async (request, response) => {
   const course = await Course.findById(request.params.id)
-  console.log(course)
-  
-  const coordinator = await User.findById(course?.coordinator)
-  if (coordinator) {
-    coordinator.courses = coordinator.courses.filter(courseId => courseId !== course?._id)
-    await coordinator?.save()
+
+  // Course is already removed
+  if (!course) {
+    return response.status(204).end()
   }
   
-  await course?.delete()
+  // Remove course ID from its coordinator
+  const coordinator = await User.findById(course.coordinator)
+  if (coordinator) {
+    coordinator.courses = coordinator.courses.filter(courseId => courseId !== course._id)
+    await coordinator.save()
+  }
+
+  // Remove any exams created for this course
+  const exams = await exam.find({ course: course._id })
+  for (const exam of exams) {
+    await exam.delete()
+  }
+
+  // Remove course ID from any enrolled students
+  for (const studentId of course.studentsEnrolled) {
+    const student = await User.findById(studentId)
+    if (student) {
+      student.courses = student.courses.filter(courseId => courseId !== course._id)
+      await student.save()
+    }
+  }
+  
+  await course.delete()
   response.status(204).end()
   
 })
