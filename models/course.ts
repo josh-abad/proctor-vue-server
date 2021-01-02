@@ -1,4 +1,6 @@
 import { Schema, Document, model } from 'mongoose'
+import Exam from './exam'
+import User from './user'
 
 export interface CourseDocument extends Document {
   name: string;
@@ -34,6 +36,14 @@ const courseSchema = new Schema({
     type: Number,
     required: true
   }
+})
+
+courseSchema.post('findOneAndDelete', async (course: CourseDocument) => {
+  await Promise.all([ 
+    Exam.deleteMany({ course: course._id }),
+    User.updateMany({ _id: { $in: course.studentsEnrolled } }, { $pull: { courses: course._id } }),
+    User.updateOne({ _id: course.coordinator }, { $pull: { courses: course._id }})
+  ])
 })
 
 courseSchema.set('toJSON', {

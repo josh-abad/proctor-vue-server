@@ -1,4 +1,7 @@
 import { Schema, Document, model } from 'mongoose'
+import Course from './course'
+import ExamAttempt from './exam_attempt'
+import ExamResult from './exam_result'
 
 interface ExamItem {
   question: string,
@@ -69,6 +72,14 @@ const examSchema = new Schema({
     type: Number,
     required: true
   }
+})
+
+examSchema.post('findOneAndDelete', async (exam: ExamDocument) => {
+  await Promise.all([ 
+    Course.updateOne({ _id: exam.course }, { $pull: { exams: exam._id }}),
+    ExamAttempt.deleteMany({ exam: exam._id }),
+    ExamResult.deleteMany({ exam: exam._id })
+  ])
 })
 
 examSchema.set('toJSON', {

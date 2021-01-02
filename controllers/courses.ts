@@ -1,6 +1,5 @@
 import { Response, Router } from 'express'
 import Course, { CourseDocument } from '../models/course'
-import exam from '../models/exam'
 import User from '../models/user'
 
 const coursesRouter = Router()
@@ -71,7 +70,7 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
     return response.status(404).end()
   }
 
-  // If request contains a userId, it's a request for enrollment
+  // If request contains a userId, it's a request for enrollment for one student
   const userId = body.userId
   if (userId) {
     const user = await User.findById(userId)
@@ -101,41 +100,33 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
     const updatedCourse = await course.save()
     return response.json(await updatedCourse.populate('coordinator').execPopulate())
   }
+
+  // If request contains a userIds, it's a request for enrollment for single/multiple student(s)
+  const userIds = body.userIds
+  if (userIds) {
+    const users = await User.find({ _id: { $in: userIds }, role: 'student' })
+
+    if (!users) {
+      return response.status(401).json({
+        error: 'Users not found.'
+      })
+    }
+
+    const promiseArray = users.map(user => {
+      user.courses.push(course._id)
+      course.studentsEnrolled.push(user._id)
+      return user.save()
+    })
+    await Promise.all(promiseArray)
+
+    const updatedCourse = await course.save()
+    return response.json(await updatedCourse.populate('coordinator').execPopulate())
+  }
 })
 
 coursesRouter.delete('/:id', async (request, response) => {
-  const course = await Course.findById(request.params.id)
-
-  // Course is already removed
-  if (!course) {
-    return response.status(204).end()
-  }
-  
-  // Remove course ID from its coordinator
-  const coordinator = await User.findById(course.coordinator)
-  if (coordinator) {
-    coordinator.courses = coordinator.courses.filter(courseId => courseId !== course._id)
-    await coordinator.save()
-  }
-
-  // Remove any exams created for this course
-  const exams = await exam.find({ course: course._id })
-  for (const exam of exams) {
-    await exam.delete()
-  }
-
-  // Remove course ID from any enrolled students
-  for (const studentId of course.studentsEnrolled) {
-    const student = await User.findById(studentId)
-    if (student) {
-      student.courses = student.courses.filter(courseId => courseId !== course._id)
-      await student.save()
-    }
-  }
-  
-  await course.delete()
+  await Course.findByIdAndDelete(request.params.id)
   response.status(204).end()
-  
 })
 
 export default coursesRouter
