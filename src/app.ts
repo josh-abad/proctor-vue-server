@@ -14,6 +14,7 @@ import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
 import path from 'path'
 import compression from 'compression'
+import expressStaticGzip from 'express-static-gzip'
 
 logger.info('connecting to', config.MONGODB_URI as string)
 
@@ -43,7 +44,14 @@ app.use('/api/exam-results', examResultsRouter)
 app.use('/api/login', loginRouter)
 
 app.use(history())
-app.use(express.static(path.join(__dirname, 'public')))
+app.use('/', expressStaticGzip(path.join(__dirname, 'public'), {
+  enableBrotli: true,
+  customCompressions: [{
+    encodingName: 'deflate',
+    fileExtension: 'zz'
+  }],
+  orderPreference: ['br']
+}))
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
