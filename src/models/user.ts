@@ -8,6 +8,9 @@ export interface UserDocument extends Document {
   username: string,
   passwordHash: string,
   courses: string[],
+  email: string,
+  verified: boolean,
+  avatarUrl: string,
   role: 'student' | 'coordinator' | 'admin'
 }
 
@@ -37,6 +40,18 @@ const userSchema = new Schema({
     required: false,
     default: []
   }],
+  email: {
+    type: String,
+    required: true
+  },
+  verified: {
+    type: Boolean,
+    required: true
+  },
+  avatarUrl: {
+    type: String,
+    required: true
+  },
   role: {
     type: String,
     required: true

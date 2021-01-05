@@ -34,6 +34,9 @@ loginRouter.post('/', async (request, response) => {
     username: user.username,
     name: user.name,
     courses: user.courses,
+    email: user.email,
+    verified: user.verified,
+    avatarUrl: user.avatarUrl,
     role: user.role
   })
 })

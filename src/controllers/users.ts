@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import { Router } from 'express'
 import User from '../models/user'
+import md5 from 'md5'
 
 const usersRouter = Router()
 
@@ -14,6 +15,9 @@ usersRouter.post('/', async (request, response) => {
     name: body.name,
     username: body.username,
     role: body.role || 'student',
+    email: body.email,
+    verified: false,
+    avatarUrl: `http://gravatar.com/avatar/${md5(body.email.trim())}`,
     passwordHash
   })
   const savedUser = await user.save()
