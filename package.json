@@ -7,7 +7,6 @@
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "dev": "cross-env NODE_ENV=development ts-node-dev src/index.ts",
     "postinstall": "tsc && mv -i -v src/public dist/ && rm -i -v -rf src",
-    "build": "tsc",
     "build:ui": "rm -rf src/public && cd ../frontend && npm run build --prod && cp -r dist ../backend/src/public",
     "deploy": "git push heroku master",
     "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && npm run deploy",
