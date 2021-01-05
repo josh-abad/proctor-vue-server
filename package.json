@@ -8,7 +8,6 @@
     "dev": "cross-env NODE_ENV=development ts-node-dev index.ts",
     "tsc": "tsc",
     "postinstall": "tsc && mv -i -v public dist/",
-    "prebuild": "npm run build:ui",
     "build": "tsc --project ./",
     "build:ui": "rm -rf public && cd ../frontend && npm run build --prod && cp -r dist ../backend/public",
     "deploy": "git push heroku master",
