@@ -30,6 +30,7 @@ mongoosee.connect(config.MONGODB_URI as string, {
 
 const app = express()
 
+app.use(history())
 app.use(compression())
 app.use(cors())
 app.use(express.static(path.join(__dirname, 'public')))
@@ -43,7 +44,6 @@ app.use('/api/exam-attempts', examAttemptsRouter)
 app.use('/api/exam-results', examResultsRouter)
 app.use('/api/login', loginRouter)
 
-app.use(history())
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
