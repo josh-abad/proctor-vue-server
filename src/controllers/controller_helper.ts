@@ -1,7 +1,7 @@
 import { Request } from 'express'
 
 export interface UserToken {
-  username: string;
+  email: string;
   id: string;
 }
 

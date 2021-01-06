@@ -13,7 +13,6 @@ usersRouter.post('/', async (request, response) => {
 
   const user = new User({
     name: body.name,
-    username: body.username,
     role: body.role || 'student',
     email: body.email,
     verified: false,
@@ -44,7 +43,6 @@ usersRouter.put('/:id', async (request, response) => {
   const oldUser = await User.findById(request.params.id)
   if (oldUser) {
     oldUser.name = body.name || oldUser.name
-    oldUser.username = body.username || oldUser.username
     oldUser.courses = body.courses || oldUser.courses
 
     const updatedUser = await oldUser.save()

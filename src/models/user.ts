@@ -5,7 +5,6 @@ export interface UserDocument extends Document {
     first: string,
     last: string
   },
-  username: string,
   passwordHash: string,
   courses: string[],
   email: string,
@@ -24,10 +23,6 @@ const userSchema = new Schema({
       type: String,
       required: true
     }
-  },
-  username: {
-    type: String,
-    required: true
   },
   passwordHash: {
     type: String,
