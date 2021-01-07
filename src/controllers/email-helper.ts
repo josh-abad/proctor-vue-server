@@ -30,12 +30,13 @@ const createEmailTransporter = async (): Promise<Mail> => {
 }
 
 export const sendVerificationEmail = async (to: string, token: string): Promise<void> => {
+  const base64Token = Buffer.from(token, 'binary').toString('base64')
   const transporter = await createEmailTransporter()
   const mailOptions: Mail.Options = {
     to,
     from: 'proctor.vue@gmail.com',
-    subject: 'Proctor View Account Verification',
-    text: `Go to http://proctor-vue.herokuapp.com/verify/${token} to verify your account.`,
+    subject: 'Proctor Vue Account Verification',
+    text: `Go to http://proctor-vue.herokuapp.com/verify/${base64Token} to verify your account.`,
     html: `
       <div>
         <img src="cid:logo" alt="logo" width="175" />
@@ -43,12 +44,12 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
           You have one more step remaining to activate your Proctor Vue account. Click on the button below to verify your email address:
         </p>
         <button style="background-color: #f00; padding: 5px;">
-          <a href="http://proctor-vue.herokuapp.com/verify/${token}">Verify my email</a>
+          <a href="http://proctor-vue.herokuapp.com/verify/${base64Token}">Verify my email</a>
         </button>
         <p>
           Didn’t work? Copy the link below into your web browser:
         </p> 
-        <p>http://proctor-vue.herokuapp.com/verify/${token}</p>
+        <p>http://proctor-vue.herokuapp.com/verify/${base64Token}</p>
       </div>
     `,
     attachments: [{
