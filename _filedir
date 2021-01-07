@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+      <div class="main" style="max-width=50px; margin: auto;">
+        <img src="https://raw.githubusercontent.com/josh-abad/cs-thesis-frontend/master/src/assets/logo.png" alt="logo" width="175" />
+        <div class="font-semibold text-2xl">
+          Verify your email address
+        </div>
+        <p>
+          Please confirm that you want to use this as your Proctor Vue account email address.
+        </p>
+        <a href="http://proctor-vue.herokuapp.com/verify/${base64Token}" style="text-decoration: none;">
+          <button class="btn">
+            Verify my email
+          </button>
+        </a>
+        <p class="text-sm" style="color: #6B7280;">
+          Or click this <a href="http://proctor-vue.herokuapp.com/verify/${base64Token}" style="color: #059669; text-decoration: none;">link</a>.
+        </p>
+      </div>
+
+</body>
+</html>
