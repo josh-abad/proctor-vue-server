@@ -43,7 +43,7 @@ usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
   // If token is sent with request, it's a request to re-authenticate user
   if (token) {
     const decodedToken = jwt.verify(token as string, config.SECRET)
-    if (!(decodedToken as UserToken).id || request.params.id !== (decodedToken as UserToken).id) {
+    if (!(decodedToken as UserToken).id && request.params.id !== (decodedToken as UserToken).id) {
       return response.status(401).json({ error: 'Token is invalid.' })
     }
 
