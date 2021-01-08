@@ -4,15 +4,11 @@ import nodemailer from 'nodemailer'
 import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import logger from '../utils/logger'
 
-const GOOGLE_CLIENT_ID = '186147661833-dhkeq0274pd9kro8rlin5n9cf1adh36b.apps.googleusercontent.com'
-const GOOGLE_CLIENT_SECRET = '4oxqOyNsftZMrhW3P3hQg0Dw'
-const GOOGLE_REFRESH_TOKEN = '1//049SgESh2gZrkCgYIARAAGAQSNwF-L9Ir1axwePzJo5nQUpOW-ZAsoQt5VgufruXbVXkitHkupR9PgSQY0jiq4s574pDADcYWnuY'
-
 const createEmailTransporter = async (): Promise<Mail> => {
   const OAuth2 = google.auth.OAuth2
-  const ouath2Client = new OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
+  const ouath2Client = new OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
   ouath2Client.setCredentials({
-    refresh_token: GOOGLE_REFRESH_TOKEN
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
   })
   const accessToken = await ouath2Client.getAccessToken()
 
@@ -21,9 +17,9 @@ const createEmailTransporter = async (): Promise<Mail> => {
     auth: {
       type: 'OAuth2',
       user: 'proctor.vue@gmail.com',
-      clientId: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      refreshToken: GOOGLE_REFRESH_TOKEN,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
       accessToken: accessToken.token
     }
   } as SMTPTransport.Options)
