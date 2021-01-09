@@ -6,7 +6,7 @@ import ExamResult from './exam_result'
 interface ExamItem {
   question: string,
   choices: string[],
-  answer: string,
+  answer: string[],
   questionType: 'text' | 'multiple choice' | 'multiple answers'
 }
 
@@ -20,10 +20,10 @@ const examItemSchema = new Schema({
     required: false,
     default: []
   }],
-  answer: {
+  answer: [{
     type: String,
     required: true
-  },
+  }],
   questionType: {
     type: String,
     required: true

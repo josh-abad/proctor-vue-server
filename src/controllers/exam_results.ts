@@ -23,9 +23,17 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
 
   for (const answer of answers) {
     const examItem = exam?.examItems.find(ei => ei.question === answer.question)
+    let points = 0
+    if (examItem) {
+      if (examItem && examItem.questionType !== 'multiple answers') {
+        points = examItem.answer[0] === answer.answer ? 1 : 0 
+      } else {
+        points = examItem.answer.reduce((_a, b) => (answer.answer as string[]).includes(b) ? 1 : 0, 0)
+      }
+    }
     scores.push({
-      question: examItem?.question as string,
-      points: examItem?.answer === answer.answer ? 1 : 0 
+      points,
+      question: examItem?.question as string
     })
   }
 
