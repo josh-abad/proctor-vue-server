@@ -5,6 +5,7 @@ export interface UserDocument extends Document {
     first: string,
     last: string
   },
+  fullName: string,
   passwordHash: string,
   courses: string[],
   email: string,
@@ -58,6 +59,7 @@ userSchema.virtual('fullName').get(function (this: UserDocument) {
 })
 
 userSchema.set('toJSON', {
+  getters: true,
   transform: (_document: Document, returnedObject: UserDocument) => {
     returnedObject.id = returnedObject._id
     delete returnedObject._id

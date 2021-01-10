@@ -65,6 +65,7 @@ usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
       token: newToken,
       id: user.id,
       name: user.name,
+      fullName: user.fullName,
       courses: user.courses,
       email: user.email,
       verified: user.verified,
