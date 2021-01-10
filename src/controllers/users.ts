@@ -68,17 +68,7 @@ usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
 
     const newToken = jwt.sign(userForToken, process.env.SECRET as string, { expiresIn: '14 days' })
 
-    return response.status(200).send({
-      token: newToken,
-      id: user.id,
-      name: user.name,
-      fullName: user.fullName,
-      courses: user.courses,
-      email: user.email,
-      verified: user.verified,
-      avatarUrl: user.avatarUrl,
-      role: user.role
-    })
+    return response.status(200).send({ ...user.toJSON(), token: newToken })
   }
   
   const user = await User.findById(request.params.id)
