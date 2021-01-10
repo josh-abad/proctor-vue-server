@@ -9,8 +9,15 @@ import config from '../utils/config'
 
 const usersRouter = Router()
 
-usersRouter.post('/', async (request, response) => {
+usersRouter.post('/', async (request, response): Promise<Response | void> => {
   const body = request.body
+
+  const emailExists = await User.exists({ email: body.email })
+  if (emailExists) {
+    return response.status(401).json({
+      error: 'Email is already taken.'
+    })
+  }
 
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(body.password, saltRounds)

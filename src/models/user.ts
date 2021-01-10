@@ -1,4 +1,5 @@
 import { Schema, Document, model } from 'mongoose'
+import uniqueValidator from 'mongoose-unique-validator'
 
 export interface UserDocument extends Document {
   name: {
@@ -38,7 +39,8 @@ const userSchema = new Schema({
   }],
   email: {
     type: String,
-    required: true
+    required: true,
+    unique: true
   },
   verified: {
     type: Boolean,
@@ -53,6 +55,8 @@ const userSchema = new Schema({
     required: true
   }
 })
+
+userSchema.plugin(uniqueValidator)
 
 userSchema.virtual('fullName').get(function (this: UserDocument) {
   return `${this.name.first} ${this.name.last}`
