@@ -24,7 +24,7 @@ usersRouter.post('/', async (request, response) => {
     passwordHash
   })
 
-  const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET as string)
+  const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET as string, { expiresIn: '1h' })
 
   sendVerificationEmail(user.email, token)
 

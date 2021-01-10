@@ -24,19 +24,6 @@ verifyRouter.post('/', async (request, response): Promise<Response | void> => {
     return
   }
 
-  const dateNow = new Date()
-  
-  const tokenTime = (decodedToken as { iat: number }).iat * 1000
-
-  const hours = 2
-  const tokenLife = hours * 3600 * 1000
-
-  if (tokenTime + tokenLife < dateNow.getTime()) {
-    return response.status(401).json({
-      error: 'Verification has expired.'
-    })
-  }
-
   if (user.verified) {
     return response.status(401).json({
       error: 'User is already verified.'
