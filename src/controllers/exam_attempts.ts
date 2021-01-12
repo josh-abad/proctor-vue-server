@@ -58,23 +58,23 @@ examAttemptsRouter.post('/', async (request, response): Promise<Response | void>
 
   const attemptToken = jwt.sign(attemptForToken, config.SECRET as string)
 
-  response.json({ token: attemptToken, attempt: savedExamAttempt })
+  response.json({ token: attemptToken, attempt: await savedExamAttempt.populate({ path: 'exam', populate: { path: 'course' } }).execPopulate() })
 })
 
 examAttemptsRouter.get('/', async (request, response) => {
   const userId = request.query.userId
   if (userId) {
-    const examAttemptsByUser = await ExamAttempt.find({ user: userId as string })
+    const examAttemptsByUser = await ExamAttempt.find({ user: userId as string }).populate({ path: 'exam', populate: { path: 'course' } })
     response.json(examAttemptsByUser)
     return
   }
 
-  const examAttempts = await ExamAttempt.find({})
+  const examAttempts = await ExamAttempt.find({}).populate({ path: 'exam', populate: { path: 'course' } })
   response.json(examAttempts)
 })
 
 examAttemptsRouter.get('/:id', async (request, response) => {
-  const examAttempt = await ExamAttempt.findById(request.params.id)
+  const examAttempt = await ExamAttempt.findById(request.params.id).populate({ path: 'exam', populate: { path: 'course' } })
   if (examAttempt){
     response.json(examAttempt)
   } else {

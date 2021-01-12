@@ -38,7 +38,7 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
   }
 
   const user = await User.findById((decodedToken as AttemptToken).userId)
-  const attempt = await ExamAttempt.findById((decodedToken as AttemptToken).attemptId)
+  const attempt = await ExamAttempt.findById((decodedToken as AttemptToken).attemptId).populate({ path: 'exam', populate: { path: 'course' } })
   
   const examResult = new ExamResult({
     scores,
@@ -58,7 +58,7 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
   const savedExamResult = await examResult.save()
 
   response.json({
-    examResult: savedExamResult.toJSON(),
+    examResult: await savedExamResult.populate('user').execPopulate(),
     attempt: savedAttempt?.toJSON()
   })
 })
@@ -75,7 +75,7 @@ examResultsRouter.get('/', async (request, response) => {
 })
 
 examResultsRouter.get('/:id', async (request, response) => {
-  const examResult = await ExamResult.findById(request.params.id)
+  const examResult = await ExamResult.findById(request.params.id).populate('user')
   if (examResult){
     response.json(examResult)
   } else {
