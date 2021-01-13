@@ -4,8 +4,6 @@ import User from '../models/user'
 import md5 from 'md5'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from './email-helper'
-import helper, { UserToken } from './controller_helper'
-import config from '../utils/config'
 
 const usersRouter = Router()
 
@@ -45,32 +43,6 @@ usersRouter.get('/', async (_request, response) => {
 })
 
 usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
-  const token = helper.getTokenFrom(request)
-
-  // If token is sent with request, it's a request to re-authenticate user
-  if (token) {
-    const decodedToken = jwt.verify(token as string, config.SECRET)
-    if (!(decodedToken as UserToken).id && request.params.id !== (decodedToken as UserToken).id) {
-      return response.status(401).json({ error: 'Token is invalid.' })
-    }
-
-    const user = await User.findById((decodedToken as UserToken).id)
-
-    if (!user) {
-      return response.status(404).end()
-    }
-
-    const userForToken = {
-      email: user.email,
-      id: user._id,
-      role: user.role
-    }
-
-    const newToken = jwt.sign(userForToken, process.env.SECRET as string, { expiresIn: '14 days' })
-
-    return response.status(200).send({ ...user.toJSON(), token: newToken })
-  }
-  
   const user = await User.findById(request.params.id)
   if (user){
     response.json(user)

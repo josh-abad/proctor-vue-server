@@ -16,6 +16,7 @@ import path from 'path'
 import compression from 'compression'
 import expressStaticGzip from 'express-static-gzip'
 import verifyRouter from './controllers/verify'
+import validateRouter from './controllers/validate'
 
 logger.info('connecting to', config.MONGODB_URI as string)
 
@@ -44,6 +45,7 @@ app.use('/api/exam-attempts', examAttemptsRouter)
 app.use('/api/exam-results', examResultsRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/verify', verifyRouter)
+app.use('/api/validate', validateRouter)
 
 app.use(history())
 app.use('/', expressStaticGzip(path.join(__dirname, 'public'), {
