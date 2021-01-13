@@ -12,7 +12,6 @@ import loginRouter from './controllers/login'
 import logger from './utils/logger'
 import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
-import path from 'path'
 import compression from 'compression'
 import expressStaticGzip from 'express-static-gzip'
 import verifyRouter from './controllers/verify'
@@ -48,7 +47,7 @@ app.use('/api/verify', verifyRouter)
 app.use('/api/validate', validateRouter)
 
 app.use(history())
-app.use('/', expressStaticGzip(path.join(__dirname, 'public'), {
+app.use('/', expressStaticGzip('public', {
   enableBrotli: true,
   customCompressions: [{
     encodingName: 'deflate',
