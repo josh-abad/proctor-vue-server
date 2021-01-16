@@ -1,6 +1,6 @@
 import { Response, Router } from 'express'
 import Course from '../models/course'
-import Exam from '../models/exam'
+import Exam, { ExamDocument } from '../models/exam'
 import config from '../utils/config'
 import jwt from 'jsonwebtoken'
 import User from '../models/user'
@@ -50,8 +50,10 @@ examsRouter.post('/', async (request, response): Promise<Response | void> => {
     random: body.random,
     course: course?._id,
     maxAttempts: body.maxAttempts,
-    week: body.week
-  })
+    week: body.week,
+    startDate: body.startDate, 
+    endDate: body.endDate
+  } as ExamDocument)
 
   const savedExam = await exam.save()
   if (course) {

@@ -38,7 +38,9 @@ export interface ExamDocument extends Document {
   random: boolean,
   course: string,
   maxAttempts: number,
-  week: number
+  week: number,
+  startDate: Date,
+  endDate: Date
 }
 
 const examSchema = new Schema({
@@ -70,6 +72,14 @@ const examSchema = new Schema({
   },
   week: {
     type: Number,
+    required: true
+  },
+  startDate: {
+    type: Date,
+    required: true
+  },
+  endDate: {
+    type: Date,
     required: true
   }
 })
