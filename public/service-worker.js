@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.596308fd92e397d5020e2a370701145b.js"
+  "/precache-manifest.8bf3e10041a1e034b9fb01dac2d66e8d.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "cs-design-frontend"});
