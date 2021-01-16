@@ -37,7 +37,8 @@
     "md5": "^2.3.0",
     "mongoose": "^5.11.4",
     "mongoose-unique-validator": "^2.0.3",
-    "nodemailer": "^6.4.17"
+    "nodemailer": "^6.4.17",
+    "socket.io": "^3.0.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
