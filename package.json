@@ -13,7 +13,7 @@
     "postinstall": "tsc && rm -i -v -rf src",
     "tsc": "tsc",
     "build:ui": "rm -rf public && cd ../frontend && npm run build --prod && cp -r dist ../backend/public",
-    "deploy": "git push heroku master",
+    "deploy": "git push heroku main",
     "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && npm run deploy",
     "logs:prod": "heroku logs --tail",
     "lint": "eslint .",
