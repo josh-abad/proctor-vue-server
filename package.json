@@ -10,7 +10,7 @@
   "scripts": {
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "dev": "cross-env NODE_ENV=development ts-node-dev src/index.ts",
-    "postinstall": "tsc",
+    "postinstall": "tsc && rm -rf src/",
     "tsc": "tsc",
     "build:ui": "rm -rf public && cd ../frontend && npm run build --prod && cp -r dist ../backend/public",
     "deploy": "git push heroku main",
