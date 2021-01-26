@@ -4,6 +4,7 @@ import User from '../models/user'
 import md5 from 'md5'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from './email-helper'
+import upload from '../utils/image-upload'
 
 const usersRouter = Router()
 
@@ -67,6 +68,14 @@ usersRouter.put('/:id', async (request, response) => {
 usersRouter.delete('/:id', async (request, response) => {
   await User.findByIdAndDelete(request.params.id)
   response.status(204).end()
+})
+
+usersRouter.post('/:id/reference-image', upload.single('image'), async (request, response) => {
+  const filename = (request.file as Express.MulterS3.File).key
+  const referenceImageUrl = `${process.env.CLOUDFRONT_DOMAIN}${filename}`
+
+  const updatedUser = await User.findByIdAndUpdate(request.params.id, { referenceImageUrl }, { new: true })
+  response.json(updatedUser)
 })
 
 export default usersRouter
