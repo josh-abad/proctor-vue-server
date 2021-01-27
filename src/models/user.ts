@@ -7,12 +7,12 @@ export interface UserDocument extends Document {
     last: string
   },
   fullName: string,
-  passwordHash: string,
+  passwordHash?: string,
   courses: string[],
   email: string,
   verified: boolean,
   avatarUrl: string,
-  referenceImageUrl: string,
+  referenceImageUrl?: string,
   role: 'student' | 'coordinator' | 'admin'
 }
 

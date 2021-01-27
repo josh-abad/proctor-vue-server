@@ -11,7 +11,7 @@ loginRouter.post('/', async (request, response) => {
   const user = await User.findOne({ email: body.email }).select('+passwordHash')
   const passwordCorrect = user === null
     ? false
-    : await bcrypt.compare(body.password, user.passwordHash)
+    : await bcrypt.compare(body.password, user.passwordHash ?? '')
 
   if (!(user && passwordCorrect)) {
     response.status(401).json({
@@ -27,18 +27,10 @@ loginRouter.post('/', async (request, response) => {
   }
 
   const token = jwt.sign(userForToken, process.env.SECRET as string, { expiresIn: '14 days' })
+  const userCopy = { ...user.toJSON() }
+  delete userCopy.passwordHash
 
-  response.status(200).send({
-    token,
-    id: user.id,
-    name: user.name,
-    fullName: user.fullName,
-    courses: user.courses,
-    email: user.email,
-    verified: user.verified,
-    avatarUrl: user.avatarUrl,
-    role: user.role
-  })
+  response.status(200).send({ token, ...userCopy })
 })
 
 export default loginRouter
