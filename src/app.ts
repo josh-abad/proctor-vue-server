@@ -46,7 +46,6 @@ app.use('/api/verify', verifyRouter)
 app.use('/api/validate', validateRouter)
 
 app.use(history())
-app.use(express.static('public'))
 
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
