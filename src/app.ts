@@ -13,7 +13,6 @@ import logger from './utils/logger'
 import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
 import compression from 'compression'
-import expressStaticGzip from 'express-static-gzip'
 import verifyRouter from './controllers/verify'
 import validateRouter from './controllers/validate'
 import 'colors'
@@ -49,14 +48,8 @@ app.use('/api/verify', verifyRouter)
 app.use('/api/validate', validateRouter)
 
 app.use(history())
-app.use('/', expressStaticGzip('public', {
-  enableBrotli: true,
-  customCompressions: [{
-    encodingName: 'deflate',
-    fileExtension: 'zz'
-  }],
-  orderPreference: ['br']
-}))
+app.use(express.static('public'))
+
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 
