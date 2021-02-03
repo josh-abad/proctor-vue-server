@@ -35,7 +35,6 @@ app.use(compression())
 app.use(cors())
 app.use(express.json())
 app.use(middleware.requestLogger)
-app.use(middleware.socketIO)
 
 app.use('/api/users', usersRouter)
 app.use('/api/courses', coursesRouter)
