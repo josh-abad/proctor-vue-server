@@ -15,9 +15,8 @@ import history from 'connect-history-api-fallback'
 import compression from 'compression'
 import verifyRouter from './controllers/verify'
 import validateRouter from './controllers/validate'
-import 'colors'
 
-logger.info(' INFO '.bgCyan.black, 'Connecting to MongoDB...')
+logger.info('connecting to', config.MONGODB_URI as string)	
 
 mongoosee.connect(config.MONGODB_URI as string, {
   useNewUrlParser: true,
@@ -25,9 +24,9 @@ mongoosee.connect(config.MONGODB_URI as string, {
   useFindAndModify: false,
   useCreateIndex: true
 }).then(() => {
-  logger.info(' DONE '.bgGreen.black, 'Connected to MongoDB'.green)
+  logger.info('connected to MongoDB')	
 }).catch(error => {
-  logger.error(' ERROR '.bgRed.black, (error as Error).message.red)
+  logger.error('error connecting to MongoDB:', (error as Error).message)	
 })
 
 const app = express()
