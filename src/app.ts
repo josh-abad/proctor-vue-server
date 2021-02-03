@@ -15,6 +15,7 @@ import history from 'connect-history-api-fallback'
 import compression from 'compression'
 import verifyRouter from './controllers/verify'
 import validateRouter from './controllers/validate'
+import helmet from 'helmet'
 
 logger.info('connecting to', config.MONGODB_URI as string)	
 
@@ -31,6 +32,7 @@ mongoosee.connect(config.MONGODB_URI as string, {
 
 const app = express()
 
+app.use(helmet())
 app.use(compression())
 app.use(cors())
 app.use(express.json())
