@@ -13,12 +13,11 @@ import logger from './utils/logger'
 import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
 import compression from 'compression'
-import expressStaticGzip from 'express-static-gzip'
 import verifyRouter from './controllers/verify'
 import validateRouter from './controllers/validate'
-import 'colors'
+import helmet from 'helmet'
 
-logger.info(' INFO '.bgCyan.black, 'Connecting to MongoDB...')
+logger.info('connecting to', config.MONGODB_URI as string)	
 
 mongoosee.connect(config.MONGODB_URI as string, {
   useNewUrlParser: true,
@@ -26,18 +25,18 @@ mongoosee.connect(config.MONGODB_URI as string, {
   useFindAndModify: false,
   useCreateIndex: true
 }).then(() => {
-  logger.info(' DONE '.bgGreen.black, 'Connected to MongoDB'.green)
+  logger.info('connected to MongoDB')	
 }).catch(error => {
-  logger.error(' ERROR '.bgRed.black, (error as Error).message.red)
+  logger.error('error connecting to MongoDB:', (error as Error).message)	
 })
 
 const app = express()
 
+app.use(helmet())
 app.use(compression())
 app.use(cors())
 app.use(express.json())
 app.use(middleware.requestLogger)
-app.use(middleware.socketIO)
 
 app.use('/api/users', usersRouter)
 app.use('/api/courses', coursesRouter)
@@ -49,14 +48,7 @@ app.use('/api/verify', verifyRouter)
 app.use('/api/validate', validateRouter)
 
 app.use(history())
-app.use('/', expressStaticGzip('public', {
-  enableBrotli: true,
-  customCompressions: [{
-    encodingName: 'deflate',
-    fileExtension: 'zz'
-  }],
-  orderPreference: ['br']
-}))
+
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
 

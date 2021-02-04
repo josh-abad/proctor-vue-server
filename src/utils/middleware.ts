@@ -1,11 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
 import logger from './logger'
-import io from '../index'
-
-const socketIO = (request: Request, _response: Response, next: NextFunction): void => {
-  request.io = io
-  next()
-}
 
 const requestLogger = (request: Request, _response: Response, next: NextFunction): void => {
   logger.info('Method:', request.method)
@@ -44,7 +38,6 @@ const errorHandler = (error: Error, _request: Request, response: Response, next:
 }
 
 export default {
-  socketIO,
   requestLogger,
   unknownEndpoint,
   errorHandler

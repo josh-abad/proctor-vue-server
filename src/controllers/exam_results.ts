@@ -61,10 +61,6 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
     examResult: await savedExamResult.populate('user').execPopulate(),
     attempt: savedAttempt?.toJSON()
   })
-
-  if (request.io) {
-    request.io.emit('new result', savedAttempt?.toJSON())
-  }
 })
 
 examResultsRouter.get('/', async (request, response) => {

@@ -26,7 +26,7 @@ usersRouter.post('/', async (request, response): Promise<Response | void> => {
     role: body.role || 'student',
     email: body.email,
     verified: false,
-    avatarUrl: `http://gravatar.com/avatar/${md5(body.email.trim())}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
+    avatarUrl: `https://gravatar.com/avatar/${md5(body.email.trim())}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
     passwordHash
   })
 
