@@ -1,10 +1,10 @@
 {
-  "name": "cs-design-backend",
-  "version": "1.1.2",
-  "description": "Backend application for CS Design using TypeScript, Express, and MongoDB",
+  "name": "proctor-vue-server",
+  "version": "1.1.3",
+  "description": "Proctor Vue server using TypeScript, Express, and MongoDB",
   "repository": {
     "type": "git",
-    "url": "https://github.com/josh-abad/cs-thesis-backend.git"
+    "url": "https://github.com/josh-abad/proctor-vue-server.git"
   },
   "main": "index.ts",
   "scripts": {
@@ -15,7 +15,7 @@
     "test": "NODE_ENV=test jest --verbose --runInBand"
   },
   "author": "Joshua Timothy E. Abad",
-  "license": "ISC",
+  "license": "MIT",
   "engines": {
     "node": "14.5.0"
   },
