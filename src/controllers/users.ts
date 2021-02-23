@@ -45,7 +45,7 @@ usersRouter.get('/', async (_request, response) => {
 
 usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
   const user = await User.findById(request.params.id)
-  if (user){
+  if (user) {
     response.json(user)
   } else {
     response.status(404).end()

@@ -75,7 +75,7 @@ examAttemptsRouter.get('/', async (request, response) => {
 
 examAttemptsRouter.get('/:id', async (request, response) => {
   const examAttempt = await ExamAttempt.findById(request.params.id).populate({ path: 'exam', populate: { path: 'course' } })
-  if (examAttempt){
+  if (examAttempt) {
     response.json(examAttempt)
   } else {
     response.status(404).end()

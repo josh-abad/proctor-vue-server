@@ -70,7 +70,7 @@ examsRouter.get('/', async (_request, response) => {
 
 examsRouter.get('/:id', async (request, response) => {
   const exam = await Exam.findById(request.params.id)
-  if (exam){
+  if (exam) {
     response.json(exam)
   } else {
     response.status(404).end()
