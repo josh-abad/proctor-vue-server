@@ -1,6 +1,8 @@
 import { Response, Router } from 'express'
 import Course, { CourseDocument } from '../models/course'
+import Exam from '../models/exam'
 import User from '../models/user'
+import helper from '../utils/helper'
 
 const coursesRouter = Router()
 
@@ -59,6 +61,20 @@ coursesRouter.get('/:id', async (request, response) => {
   } else {
     response.status(404).end()
   }
+})
+
+coursesRouter.get('/:id/upcoming-exams', async (request, response) => {
+  const course = await Course.findById(request.params.id)
+
+  if (!course) {
+    response.status(404).end()
+    return
+  }
+
+  const exams = await Exam.find({ _id: { $in: course.exams } })
+  const events = await helper.getEvents(exams)
+
+  response.json(events)
 })
 
 coursesRouter.put('/:courseId', async (request, response): Promise<Response | void> => {
