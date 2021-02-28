@@ -55,7 +55,7 @@ coursesRouter.get('/', async (request, response) => {
 })
 
 coursesRouter.get('/:id', async (request, response) => {
-  const course = await Course.findById(request.params.id)
+  const course = await Course.findById(request.params.id).populate('coordinator')
   if (course) {
     response.json(course)
   } else {
