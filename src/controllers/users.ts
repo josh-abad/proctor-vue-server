@@ -5,6 +5,9 @@ import md5 from 'md5'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from './email-helper'
 import upload from '../utils/image-upload'
+import ExamAttempt from '../models/exam_attempt'
+import Exam from '../models/exam'
+import helper from '../utils/helper'
 
 const usersRouter = Router()
 
@@ -45,11 +48,27 @@ usersRouter.get('/', async (_request, response) => {
 
 usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
   const user = await User.findById(request.params.id)
-  if (user){
+  if (user) {
     response.json(user)
   } else {
     response.status(404).end()
   }
+})
+
+usersRouter.get('/:id/courses', async (request, response) => {
+  const user = await User.findById(request.params.id).populate('courses')
+  if (user) {
+    response.json(user.courses)
+  } else {
+    response.status(404).end()
+  }
+})
+
+usersRouter.get('/:id/attempts', async (request, response) => {
+  const attempts = await ExamAttempt.find({ user: request.params.id })
+    .populate('exam')
+    .populate('examResult')
+  response.json(attempts)
 })
 
 usersRouter.put('/:id', async (request, response) => {
@@ -65,9 +84,55 @@ usersRouter.put('/:id', async (request, response) => {
   }
 })
 
+usersRouter.get('/:id/recent-courses', async (request, response) => {
+  const user = await User.findById(request.params.id).populate('recentCourses')
+  if (user) {
+    response.json(user.recentCourses)
+  } else {
+    response.status(404).end()
+  }
+})
+
+usersRouter.put('/:id/recent-courses', async (request, response) => {
+  const body = request.body
+
+  const user = await User.findById(request.params.id)
+  if (user && body.courseId) {
+    if (!user.courses.some(courseId => courseId.toString() === body.courseId)) {
+      response.status(401).json({
+        error: 'Student is not enrolled in course.'
+      })
+      return
+    }
+
+    if (user.recentCourses.includes(body.courseId)) {
+      user.recentCourses = user.recentCourses.filter(id => id.toString() !== body.courseId)
+    }
+
+    user.recentCourses.push(body.courseId)
+    const updatedUser = await user.save()
+    response.json(updatedUser.recentCourses)
+  }
+})
+
 usersRouter.delete('/:id', async (request, response) => {
   await User.findByIdAndDelete(request.params.id)
   response.status(204).end()
+})
+
+usersRouter.get('/:id/upcoming-exams', async (request, response) => {
+  const user = await User.findById(request.params.id)
+
+  if (!user) {
+    response.status(404).end()
+    return
+  }
+
+  const exams = await Exam.find({ course: { $in: user.courses } })
+
+  const events = await helper.getEvents(exams)
+
+  response.json(events)
 })
 
 usersRouter.post('/:id/reference-image', upload.single('image'), async (request, response) => {

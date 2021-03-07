@@ -76,7 +76,7 @@ examResultsRouter.get('/', async (request, response) => {
 
 examResultsRouter.get('/:id', async (request, response) => {
   const examResult = await ExamResult.findById(request.params.id).populate('user')
-  if (examResult){
+  if (examResult) {
     response.json(examResult)
   } else {
     response.status(404).end()

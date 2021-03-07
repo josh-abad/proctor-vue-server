@@ -9,6 +9,7 @@ export interface UserDocument extends Document {
   fullName: string,
   passwordHash?: string,
   courses: string[],
+  recentCourses: string[],
   email: string,
   verified: boolean,
   avatarUrl: string,
@@ -33,6 +34,12 @@ const userSchema = new Schema({
     select: false
   },
   courses: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Course',
+    required: false,
+    default: []
+  }],
+  recentCourses: [{
     type: Schema.Types.ObjectId,
     ref: 'Course',
     required: false,
