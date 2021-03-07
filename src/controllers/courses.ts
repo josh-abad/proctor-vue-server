@@ -63,6 +63,16 @@ coursesRouter.get('/:id', async (request, response) => {
   }
 })
 
+coursesRouter.get('/:id/exams', async (request, response) => {
+  const course = await Course.findById(request.params.id)
+  if (course) {
+    const exams = await Exam.find({ _id: { $in: course.exams } }).populate('course')
+    response.json(exams)
+  } else {
+    response.status(404).end()
+  }
+})
+
 coursesRouter.get('/:id/upcoming-exams', async (request, response) => {
   const course = await Course.findById(request.params.id)
 
