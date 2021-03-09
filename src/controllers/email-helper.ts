@@ -162,7 +162,7 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
           <body style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
             <div class="flex flex-col justify-center items-center p-6 text-gray-900"
               style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;align-items: center;justify-content: center;padding: 1.5rem;display: flex;flex-direction: column;color: #111827;">
-              <img class="mt-4" src="cid:logo"
+              <img class="mt-4" src="https://raw.githubusercontent.com/josh-abad/proctor-vue-web/main/src/assets/logo.png"
                 alt="logo" width="125" style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;margin-top: 1rem;">
               <div class="mt-4 text-2xl font-semibold"
                 style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;font-size: 1.5rem;line-height: 2rem;font-weight: 600;margin-top: 1rem;">
@@ -187,12 +187,7 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
             </div>
           </body>
         </html>
-    `,
-    attachments: [{
-      filename: 'logo.83d95e82.png',
-      path: `${__dirname}/../public/img/logo.83d95e82.png`,
-      cid: 'logo'
-    }]
+    `
   }
   transporter.sendMail(mailOptions, (error, response) => {
     error ? logger.error(error.message) : logger.info(response)
