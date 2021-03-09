@@ -14,7 +14,6 @@ import middleware from './utils/middleware'
 import history from 'connect-history-api-fallback'
 import compression from 'compression'
 import verifyRouter from './controllers/verify'
-import validateRouter from './controllers/validate'
 import morgan from 'morgan'
 import helmet from 'helmet'
 
@@ -53,7 +52,6 @@ app.use('/exam-attempts', examAttemptsRouter)
 app.use('/exam-results', examResultsRouter)
 app.use('/login', loginRouter)
 app.use('/verify', verifyRouter)
-app.use('/validate', validateRouter)
 
 app.use(history())
 
