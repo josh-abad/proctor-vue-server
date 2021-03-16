@@ -155,4 +155,24 @@ coursesRouter.delete('/:id', async (request, response) => {
   response.status(204).end()
 })
 
+coursesRouter.delete('/:courseId/students/:studentId', async (request, response) => {
+  await Course.update({
+    _id: request.params.courseId
+  },
+  {
+    $pull: {
+      studentsEnrolled: request.params.studentId
+    }
+  })
+  await User.update({
+    _id: request.params.studentId
+  },
+  {
+    $pull: {
+      courses: request.params.courseId
+    }
+  })
+  response.status(204).end()
+})
+
 export default coursesRouter
