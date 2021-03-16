@@ -1,5 +1,8 @@
 import { Schema, Document, model } from 'mongoose'
 import uniqueValidator from 'mongoose-unique-validator'
+import Course from './course'
+import ExamAttempt from './exam_attempt'
+import ExamResult from './exam_result'
 
 export interface UserDocument extends Document {
   name: {
@@ -72,6 +75,23 @@ userSchema.plugin(uniqueValidator)
 
 userSchema.virtual('fullName').get(function (this: UserDocument) {
   return `${this.name.first} ${this.name.last}`
+})
+
+userSchema.post('findOneAndDelete', async (user: UserDocument) => {
+  await Promise.all([ 
+    Course.updateMany({
+      _id: {
+        $in: user.courses
+      }
+    },
+    {
+      $pull: {
+        studentsEnrolled: user._id
+      }
+    }),
+    ExamAttempt.deleteMany({ user: user._id }),
+    ExamResult.deleteMany({ user: user._id })
+  ])
 })
 
 userSchema.set('toJSON', {
