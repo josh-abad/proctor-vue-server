@@ -7,6 +7,8 @@ import { sendVerificationEmail } from './email-helper'
 import upload from '../utils/image-upload'
 import ExamAttempt from '../models/exam_attempt'
 import Exam from '../models/exam'
+import Course from '../models/course'
+import { Event } from '../types'
 import helper from '../utils/helper'
 
 const usersRouter = Router()
@@ -131,6 +133,56 @@ usersRouter.get('/:id/upcoming-exams', async (request, response) => {
   const exams = await Exam.find({ course: { $in: user.courses } })
 
   const events = await helper.getEvents(exams)
+
+  response.json(events)
+})
+
+usersRouter.get('/:id/recent-activity', async (request, response) => {
+  const user = await User.findById(request.params.id)
+
+  if (!user) {
+    response.status(404).end()
+    return
+  }
+
+  const attempts = await ExamAttempt.find({ user: user.id })
+  const events: Event[] = []
+  for (const attempt of attempts) {
+    const exam = await Exam.findById(attempt.exam)
+    const course = await Course.findById(exam?.course)
+
+    if (!exam || !course) {
+      continue
+    }
+
+    const sharedEventInfo = {
+      location: course.name,
+      locationUrl: `/courses/${course.id}`,
+      subject: user.name.first,
+      subjectId: user.id,
+      subjectUrl: `/user/${user.id}`,
+      predicate: exam.label,
+      predicateUrl: `/courses/${course.id}/exams/${exam.id}`
+    }
+    const startAttemptEvent: Event = {
+      ...sharedEventInfo,
+      action: 'started',
+      date: attempt.startDate
+    }
+    events.push(startAttemptEvent)
+    if (attempt.status === 'completed') {
+      const submitAttemptEvent: Event = {
+        ...sharedEventInfo,
+        action: 'completed',
+        date: attempt.submittedDate
+      }
+      events.push(submitAttemptEvent)
+    }
+  }
+
+  events.sort((a, b) => {
+    return new Date(b.date).valueOf() - new Date(a.date).valueOf()
+  })
 
   response.json(events)
 })
