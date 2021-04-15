@@ -10,6 +10,7 @@ import Exam from '../models/exam'
 import Course from '../models/course'
 import { Event } from '../types'
 import helper from '../utils/helper'
+import config from '../utils/config'
 
 const usersRouter = Router()
 
@@ -35,7 +36,11 @@ usersRouter.post('/', async (request, response): Promise<Response | void> => {
     passwordHash
   })
 
-  const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET as string, { expiresIn: '1h' })
+  if (!config.SECRET) {
+    return response.status(401).end()
+  }
+
+  const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, { expiresIn: '1h' })
 
   sendVerificationEmail(user.email, token)
 
@@ -189,7 +194,7 @@ usersRouter.get('/:id/recent-activity', async (request, response) => {
 
 usersRouter.post('/:id/reference-image', upload.single('image'), async (request, response) => {
   const filename = (request.file as Express.MulterS3.File).key
-  const referenceImageUrl = `${process.env.CLOUDFRONT_DOMAIN}${filename}`
+  const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
 
   const updatedUser = await User.findByIdAndUpdate(request.params.id, { referenceImageUrl }, { new: true })
   response.json(updatedUser)

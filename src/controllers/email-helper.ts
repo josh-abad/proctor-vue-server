@@ -3,12 +3,13 @@ import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
 import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import logger from '../utils/logger'
+import config from '../utils/config'
 
 const createEmailTransporter = async (): Promise<Mail> => {
   const OAuth2 = google.auth.OAuth2
-  const ouath2Client = new OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
+  const ouath2Client = new OAuth2(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
   ouath2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+    refresh_token: config.GOOGLE_REFRESH_TOKEN
   })
   const accessToken = await ouath2Client.getAccessToken()
 
@@ -17,9 +18,9 @@ const createEmailTransporter = async (): Promise<Mail> => {
     auth: {
       type: 'OAuth2',
       user: 'proctor.vue@gmail.com',
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+      clientId: config.GOOGLE_CLIENT_ID,
+      clientSecret: config.GOOGLE_CLIENT_SECRET,
+      refreshToken: config.GOOGLE_REFRESH_TOKEN,
       accessToken: accessToken.token
     }
   } as SMTPTransport.Options)
