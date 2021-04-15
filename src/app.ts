@@ -11,7 +11,6 @@ import examAttemptsRouter from './controllers/exam_attempts'
 import loginRouter from './controllers/login'
 import logger from './utils/logger'
 import middleware from './utils/middleware'
-import history from 'connect-history-api-fallback'
 import compression from 'compression'
 import verifyRouter from './controllers/verify'
 import morgan from 'morgan'
@@ -52,8 +51,6 @@ app.use('/exam-attempts', examAttemptsRouter)
 app.use('/exam-results', examResultsRouter)
 app.use('/login', loginRouter)
 app.use('/verify', verifyRouter)
-
-app.use(history())
 
 app.use(middleware.unknownEndpoint)
 app.use(middleware.errorHandler)
