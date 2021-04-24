@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { Response, Router } from 'express'
+import { Router } from 'express'
 import User from '@/models/user'
 import md5 from 'md5'
 import jwt from 'jsonwebtoken'
@@ -14,14 +14,15 @@ import config from '@/utils/config'
 
 const usersRouter = Router()
 
-usersRouter.post('/', async (req, res): Promise<Response | void> => {
+usersRouter.post('/', async (req, res) => {
   const body = req.body
 
   const emailExists = await User.exists({ email: body.email })
   if (emailExists) {
-    return res.status(401).json({
+    res.status(401).json({
       error: 'Email is already taken.'
     })
+    return
   }
 
   const saltRounds = 10
@@ -37,7 +38,8 @@ usersRouter.post('/', async (req, res): Promise<Response | void> => {
   })
 
   if (!config.SECRET) {
-    return res.status(401).end()
+    res.status(401).end()
+    return
   }
 
   const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, { expiresIn: '1h' })
@@ -53,7 +55,7 @@ usersRouter.get('/', async (_req, res) => {
   res.json(users)
 })
 
-usersRouter.get('/:id', async (req, res): Promise<Response | void> => {
+usersRouter.get('/:id', async (req, res) => {
   const user = await User.findById(req.params.id)
   if (user) {
     res.json(user)

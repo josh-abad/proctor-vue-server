@@ -1,4 +1,4 @@
-import { Response, Router } from 'express'
+import { Router } from 'express'
 import Exam from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
 import config from '@/utils/config'
@@ -9,14 +9,15 @@ import { UserToken } from '@/types'
 
 const examAttemptsRouter = Router()
 
-examAttemptsRouter.post('/', async (req, res): Promise<Response | void> => {
+examAttemptsRouter.post('/', async (req, res) => {
   const body = req.body
   
   const token = helper.getTokenFrom(req)
   
   const decodedToken = jwt.verify(token as string, config.SECRET as string)
   if (!token || !(decodedToken as UserToken).id) {
-    return res.status(401).json({ error: 'token missing or invalid' })
+    res.status(401).json({ error: 'token missing or invalid' })
+    return
   }
 
   const user = await User.findById((decodedToken as UserToken).id)

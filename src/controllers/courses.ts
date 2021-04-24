@@ -1,4 +1,4 @@
-import { Response, Router } from 'express'
+import { Router } from 'express'
 import Course, { CourseDocument } from '@/models/course'
 import Exam from '@/models/exam'
 import User from '@/models/user'
@@ -87,13 +87,14 @@ coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
   res.json(events)
 })
 
-coursesRouter.put('/:courseId', async (req, res): Promise<Response | void> => {
+coursesRouter.put('/:courseId', async (req, res) => {
   const body = req.body
   const course = await Course.findById(req.params.courseId)
 
   // Course doesn't exist
   if (!course) {
-    return res.status(404).end()
+    res.status(404).end()
+    return
   }
 
   // If req contains a userId, it's a req for enrollment for one student
@@ -102,21 +103,24 @@ coursesRouter.put('/:courseId', async (req, res): Promise<Response | void> => {
     const user = await User.findById(userId)
 
     if (!user) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'User not found.'
       })
+      return
     }
 
     if (user.role !== 'student') {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'User is not a student.'
       })
+      return
     }
 
     if (user.courses.includes(course.id)) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Student is already enrolled in course.'
       })
+      return
     }
 
     user.courses.push(course._id)
@@ -124,7 +128,8 @@ coursesRouter.put('/:courseId', async (req, res): Promise<Response | void> => {
 
     course.studentsEnrolled.push(user._id)
     const updatedCourse = await course.save()
-    return res.json(await updatedCourse.populate('coordinator').execPopulate())
+    res.json(await updatedCourse.populate('coordinator').execPopulate())
+    return
   }
 
   // If req contains a userIds, it's a req for enrollment for single/multiple student(s)
@@ -133,9 +138,10 @@ coursesRouter.put('/:courseId', async (req, res): Promise<Response | void> => {
     const users = await User.find({ _id: { $in: userIds }, role: 'student' })
 
     if (!users) {
-      return res.status(401).json({
+      res.status(401).json({
         error: 'Users not found.'
       })
+      return
     }
 
     const promiseArray = users.map(user => {
@@ -146,7 +152,7 @@ coursesRouter.put('/:courseId', async (req, res): Promise<Response | void> => {
     await Promise.all(promiseArray)
 
     const updatedCourse = await course.save()
-    return res.json(await updatedCourse.populate('coordinator').execPopulate())
+    res.json(await updatedCourse.populate('coordinator').execPopulate())
   }
 })
 

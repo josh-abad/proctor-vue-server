@@ -190,8 +190,8 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
         </html>
     `
   }
-  transporter.sendMail(mailOptions, (error, res) => {
-    error ? logger.error(error.message) : logger.info(res)
+  transporter.sendMail(mailOptions, (error, response) => {
+    error ? logger.error(error.message) : logger.info(response)
     transporter.close()
   })
 }
