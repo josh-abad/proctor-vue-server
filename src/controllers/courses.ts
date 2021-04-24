@@ -1,8 +1,8 @@
 import { Response, Router } from 'express'
-import Course, { CourseDocument } from '../models/course'
-import Exam from '../models/exam'
-import User from '../models/user'
-import helper from '../utils/helper'
+import Course, { CourseDocument } from '@/models/course'
+import Exam from '@/models/exam'
+import User from '@/models/user'
+import helper from '@/utils/helper'
 
 const coursesRouter = Router()
 

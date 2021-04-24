@@ -1,9 +1,9 @@
 import { Response, Router } from 'express'
-import Course from '../models/course'
-import Exam, { ExamDocument } from '../models/exam'
-import config from '../utils/config'
+import Course from '@/models/course'
+import Exam, { ExamDocument } from '@/models/exam'
+import config from '@/utils/config'
 import jwt from 'jsonwebtoken'
-import User from '../models/user'
+import User from '@/models/user'
 import helper, { UserToken } from './controller_helper'
 
 const examsRouter = Router()
@@ -13,7 +13,7 @@ examsRouter.post('/', async (request, response): Promise<Response | void> => {
 
   const token = helper.getTokenFrom(request)
   
-  const decodedToken = jwt.verify(token as string, config.SECRET)
+  const decodedToken = jwt.verify(token as string, config.SECRET as string)
   if (!token || !(decodedToken as UserToken).id) {
     return response.status(401).json({ error: 'token missing or invalid' })
   }

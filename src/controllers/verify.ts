@@ -1,15 +1,15 @@
 import jwt from 'jsonwebtoken'
 import { Response, Router } from 'express'
-import User from '../models/user'
+import User from '@/models/user'
 import helper, { UserToken } from './controller_helper'
-import config from '../utils/config'
+import config from '@/utils/config'
 
 const verifyRouter = Router()
 
 verifyRouter.post('/', async (request, response): Promise<Response | void> => {
   const token = helper.getTokenFrom(request)
   
-  const decodedToken = jwt.verify(token as string, config.SECRET)
+  const decodedToken = jwt.verify(token as string, config.SECRET as string)
   
   if (!token || !(decodedToken as UserToken).id) {
     return response.status(401).json({ error: 'Token missing or invalid.' })

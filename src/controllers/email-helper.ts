@@ -2,8 +2,8 @@ import Mail from 'nodemailer/lib/mailer'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
 import SMTPTransport from 'nodemailer/lib/smtp-transport'
-import logger from '../utils/logger'
-import config from '../utils/config'
+import logger from '@/utils/logger'
+import config from '@/utils/config'
 
 const createEmailTransporter = async (): Promise<Mail> => {
   const OAuth2 = google.auth.OAuth2

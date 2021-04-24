@@ -1,6 +1,6 @@
-import Course from '../models/course'
-import { ExamDocument } from '../models/exam'
-import { Event } from '../types'
+import Course from '@/models/course'
+import { ExamDocument } from '@/models/exam'
+import { Event } from '@/types'
 
 const isAfterToday = (date: Date): boolean => {
   const today = new Date().toDateString()
