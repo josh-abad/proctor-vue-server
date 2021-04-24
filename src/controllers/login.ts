@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Router } from 'express'
 import User from '../models/user'
+import config from '../utils/config'
 
 const loginRouter = Router()
 
@@ -26,7 +27,7 @@ loginRouter.post('/', async (request, response) => {
     role: user.role
   }
 
-  const token = jwt.sign(userForToken, process.env.SECRET as string, { expiresIn: '14 days' })
+  const token = jwt.sign(userForToken, config.SECRET as string, { expiresIn: '14 days' })
   const userCopy = { ...user.toJSON() }
   delete userCopy.passwordHash
 
