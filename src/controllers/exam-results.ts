@@ -5,7 +5,8 @@ import Exam from '@/models/exam'
 import ExamResult, { Score } from '@/models/exam-result'
 import ExamAttempt from '@/models/exam-attempt'
 import jwt from 'jsonwebtoken'
-import helper, { AttemptToken } from './controller-helper'
+import helper from './controller-helper'
+import { AttemptToken } from '@/types'
 
 const examResultsRouter = Router()
 

@@ -7,3 +7,13 @@ export interface Event {
   action: string;
   date: Date;
 }
+
+export interface UserToken {
+  email: string;
+  id: string;
+}
+
+export interface AttemptToken {
+  attemptId: string;
+  userId: string;
+}
