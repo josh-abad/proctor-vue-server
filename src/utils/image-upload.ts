@@ -15,10 +15,10 @@ const upload = multer({
     acl: 'public-read',
     bucket: config.S3_BUCKET ?? '',
     contentType: multerS3.AUTO_CONTENT_TYPE,
-    metadata: (_request, file, callback) => {
+    metadata: (_req, file, callback) => {
       callback(null, { fieldName: file.fieldname })
     },
-    key: (_request, file, callback) => {
+    key: (_req, file, callback) => {
       callback(null, `${Date.now().toString()}-${file.originalname}`)
     }
   })

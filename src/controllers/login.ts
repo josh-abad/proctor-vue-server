@@ -6,8 +6,8 @@ import config from '@/utils/config'
 
 const loginRouter = Router()
 
-loginRouter.post('/', async (request, response) => {
-  const body = request.body
+loginRouter.post('/', async (req, res) => {
+  const body = req.body
 
   const user = await User.findOne({ email: body.email }).select('+passwordHash')
   const passwordCorrect = user === null
@@ -15,7 +15,7 @@ loginRouter.post('/', async (request, response) => {
     : await bcrypt.compare(body.password, user.passwordHash ?? '')
 
   if (!(user && passwordCorrect)) {
-    response.status(401).json({
+    res.status(401).json({
       error: 'Invalid email or password.'
     })
     return
@@ -31,7 +31,7 @@ loginRouter.post('/', async (request, response) => {
   const userCopy = { ...user.toJSON() }
   delete userCopy.passwordHash
 
-  response.status(200).send({ token, ...userCopy })
+  res.status(200).send({ token, ...userCopy })
 })
 
 export default loginRouter

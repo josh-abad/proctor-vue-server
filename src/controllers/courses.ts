@@ -6,12 +6,12 @@ import helper from '@/utils/helper'
 
 const coursesRouter = Router()
 
-coursesRouter.post('/', async (request, response) => {
-  const body = request.body
+coursesRouter.post('/', async (req, res) => {
+  const body = req.body
 
   const coordinator = await User.findById(body.coordinatorId)
   if (coordinator?.role !== 'coordinator') {
-    response.status(401).send({
+    res.status(401).send({
       error: 'invalid coordinator id'
     })
     return
@@ -28,11 +28,11 @@ coursesRouter.post('/', async (request, response) => {
   await coordinator.save()
 
   const savedCourse = await course.save()
-  response.json(await savedCourse.populate('coordinator').execPopulate())
+  res.json(await savedCourse.populate('coordinator').execPopulate())
 })
 
-coursesRouter.get('/', async (request, response) => {
-  const userId = request.query.userId
+coursesRouter.get('/', async (req, res) => {
+  const userId = req.query.userId
   if (userId) {
     const user = await User.findById(userId)
     if (user) {
@@ -46,75 +46,75 @@ coursesRouter.get('/', async (request, response) => {
           await user.save()
         }
       }
-      response.json(coursesByUser)
+      res.json(coursesByUser)
       return
     }
   }
   const courses = await Course.find({}).populate('coordinator')
-  response.json(courses)
+  res.json(courses)
 })
 
-coursesRouter.get('/:id', async (request, response) => {
-  const course = await Course.findById(request.params.id).populate('coordinator')
+coursesRouter.get('/:id', async (req, res) => {
+  const course = await Course.findById(req.params.id).populate('coordinator')
   if (course) {
-    response.json(course)
+    res.json(course)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-coursesRouter.get('/:id/exams', async (request, response) => {
-  const course = await Course.findById(request.params.id)
+coursesRouter.get('/:id/exams', async (req, res) => {
+  const course = await Course.findById(req.params.id)
   if (course) {
     const exams = await Exam.find({ _id: { $in: course.exams } }).populate('course')
-    response.json(exams)
+    res.json(exams)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-coursesRouter.get('/:id/upcoming-exams', async (request, response) => {
-  const course = await Course.findById(request.params.id)
+coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
+  const course = await Course.findById(req.params.id)
 
   if (!course) {
-    response.status(404).end()
+    res.status(404).end()
     return
   }
 
   const exams = await Exam.find({ _id: { $in: course.exams } })
   const events = await helper.getEvents(exams)
 
-  response.json(events)
+  res.json(events)
 })
 
-coursesRouter.put('/:courseId', async (request, response): Promise<Response | void> => {
-  const body = request.body
-  const course = await Course.findById(request.params.courseId)
+coursesRouter.put('/:courseId', async (req, res): Promise<Response | void> => {
+  const body = req.body
+  const course = await Course.findById(req.params.courseId)
 
   // Course doesn't exist
   if (!course) {
-    return response.status(404).end()
+    return res.status(404).end()
   }
 
-  // If request contains a userId, it's a request for enrollment for one student
+  // If req contains a userId, it's a req for enrollment for one student
   const userId = body.userId
   if (userId) {
     const user = await User.findById(userId)
 
     if (!user) {
-      return response.status(401).json({
+      return res.status(401).json({
         error: 'User not found.'
       })
     }
 
     if (user.role !== 'student') {
-      return response.status(401).json({
+      return res.status(401).json({
         error: 'User is not a student.'
       })
     }
 
     if (user.courses.includes(course.id)) {
-      return response.status(401).json({
+      return res.status(401).json({
         error: 'Student is already enrolled in course.'
       })
     }
@@ -124,16 +124,16 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
 
     course.studentsEnrolled.push(user._id)
     const updatedCourse = await course.save()
-    return response.json(await updatedCourse.populate('coordinator').execPopulate())
+    return res.json(await updatedCourse.populate('coordinator').execPopulate())
   }
 
-  // If request contains a userIds, it's a request for enrollment for single/multiple student(s)
+  // If req contains a userIds, it's a req for enrollment for single/multiple student(s)
   const userIds = body.userIds
   if (userIds) {
     const users = await User.find({ _id: { $in: userIds }, role: 'student' })
 
     if (!users) {
-      return response.status(401).json({
+      return res.status(401).json({
         error: 'Users not found.'
       })
     }
@@ -146,33 +146,33 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
     await Promise.all(promiseArray)
 
     const updatedCourse = await course.save()
-    return response.json(await updatedCourse.populate('coordinator').execPopulate())
+    return res.json(await updatedCourse.populate('coordinator').execPopulate())
   }
 })
 
-coursesRouter.delete('/:id', async (request, response) => {
-  await Course.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+coursesRouter.delete('/:id', async (req, res) => {
+  await Course.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
-coursesRouter.delete('/:courseId/students/:studentId', async (request, response) => {
+coursesRouter.delete('/:courseId/students/:studentId', async (req, res) => {
   await Course.update({
-    _id: request.params.courseId
+    _id: req.params.courseId
   },
   {
     $pull: {
-      studentsEnrolled: request.params.studentId
+      studentsEnrolled: req.params.studentId
     }
   })
   await User.update({
-    _id: request.params.studentId
+    _id: req.params.studentId
   },
   {
     $pull: {
-      courses: request.params.courseId
+      courses: req.params.courseId
     }
   })
-  response.status(204).end()
+  res.status(204).end()
 })
 
 export default coursesRouter

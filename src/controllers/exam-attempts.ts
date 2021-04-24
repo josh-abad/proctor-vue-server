@@ -8,21 +8,21 @@ import helper, { UserToken } from './controller-helper'
 
 const examAttemptsRouter = Router()
 
-examAttemptsRouter.post('/', async (request, response): Promise<Response | void> => {
-  const body = request.body
+examAttemptsRouter.post('/', async (req, res): Promise<Response | void> => {
+  const body = req.body
   
-  const token = helper.getTokenFrom(request)
+  const token = helper.getTokenFrom(req)
   
   const decodedToken = jwt.verify(token as string, config.SECRET as string)
   if (!token || !(decodedToken as UserToken).id) {
-    return response.status(401).json({ error: 'token missing or invalid' })
+    return res.status(401).json({ error: 'token missing or invalid' })
   }
 
   const user = await User.findById((decodedToken as UserToken).id)
   const exam = await Exam.findById(body.examId)
 
   if (!(exam && user)) {
-    response.status(401).json({
+    res.status(401).json({
       'error': 'invalid user or exam'
     })
     return
@@ -31,7 +31,7 @@ examAttemptsRouter.post('/', async (request, response): Promise<Response | void>
   const pastAttempts = await ExamAttempt.find({ user: user._id, exam: exam._id })
 
   if (pastAttempts.length >= exam.maxAttempts) {
-    response.status(401).json({
+    res.status(401).json({
       'error': 'max attempts reached'
     })
     return
@@ -58,32 +58,32 @@ examAttemptsRouter.post('/', async (request, response): Promise<Response | void>
 
   const attemptToken = jwt.sign(attemptForToken, config.SECRET as string)
 
-  response.json({ token: attemptToken, attempt: await savedExamAttempt.populate({ path: 'exam', populate: { path: 'course' } }).execPopulate() })
+  res.json({ token: attemptToken, attempt: await savedExamAttempt.populate({ path: 'exam', populate: { path: 'course' } }).execPopulate() })
 })
 
-examAttemptsRouter.get('/', async (request, response) => {
-  const userId = request.query.userId
+examAttemptsRouter.get('/', async (req, res) => {
+  const userId = req.query.userId
   if (userId) {
     const examAttemptsByUser = await ExamAttempt.find({ user: userId as string }).populate({ path: 'exam', populate: { path: 'course' } })
-    response.json(examAttemptsByUser)
+    res.json(examAttemptsByUser)
     return
   }
 
   const examAttempts = await ExamAttempt.find({}).populate({ path: 'exam', populate: { path: 'course' } })
-  response.json(examAttempts)
+  res.json(examAttempts)
 })
 
-examAttemptsRouter.get('/:id', async (request, response) => {
-  const examAttempt = await ExamAttempt.findById(request.params.id).populate({ path: 'exam', populate: { path: 'course' } })
+examAttemptsRouter.get('/:id', async (req, res) => {
+  const examAttempt = await ExamAttempt.findById(req.params.id).populate({ path: 'exam', populate: { path: 'course' } })
   if (examAttempt) {
-    response.json(examAttempt)
+    res.json(examAttempt)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-examAttemptsRouter.put('/:id', async (request, response) => {
-  const body = request.body
+examAttemptsRouter.put('/:id', async (req, res) => {
+  const body = req.body
 
   const examAttempt = {
     status: body.status,
@@ -91,17 +91,17 @@ examAttemptsRouter.put('/:id', async (request, response) => {
     courseId: body.courseId
   }
 
-  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(request.params.id, examAttempt, {
+  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(req.params.id, examAttempt, {
     new: true,
     runValidators: true,
     context: 'query'
   })
-  response.json(updatedExamItem)
+  res.json(updatedExamItem)
 })
 
-examAttemptsRouter.delete('/:id', async (request, response) => {
-  await ExamAttempt.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+examAttemptsRouter.delete('/:id', async (req, res) => {
+  await ExamAttempt.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
 export default examAttemptsRouter

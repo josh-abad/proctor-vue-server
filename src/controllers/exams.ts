@@ -8,35 +8,35 @@ import helper, { UserToken } from './controller-helper'
 
 const examsRouter = Router()
 
-examsRouter.post('/', async (request, response): Promise<Response | void> => {
-  const body = request.body
+examsRouter.post('/', async (req, res): Promise<Response | void> => {
+  const body = req.body
 
-  const token = helper.getTokenFrom(request)
+  const token = helper.getTokenFrom(req)
   
   const decodedToken = jwt.verify(token as string, config.SECRET as string)
   if (!token || !(decodedToken as UserToken).id) {
-    return response.status(401).json({ error: 'token missing or invalid' })
+    return res.status(401).json({ error: 'token missing or invalid' })
   }
 
   const user = await User.findById((decodedToken as UserToken).id)
   const course = await Course.findById(body.courseId)
 
   if (!(course && user)) {
-    response.status(401).json({
+    res.status(401).json({
       'error': 'invalid user or course'
     })
     return
   }
 
   if (user.role === 'student') {
-    response.status(401).json({
+    res.status(401).json({
       'error': 'role does not permit creation of new exams'
     })
     return
   }
 
   if (user.role !== 'admin' && user.id !== course.coordinator.toString()) {
-    response.status(401).json({
+    res.status(401).json({
       'error': 'coordinator not assigned to course'
     })
     return
@@ -60,25 +60,25 @@ examsRouter.post('/', async (request, response): Promise<Response | void> => {
     course.exams = course?.exams.concat(savedExam._id)
     await course.save()
   }
-  response.json(await savedExam.populate('course').execPopulate())
+  res.json(await savedExam.populate('course').execPopulate())
 })
 
-examsRouter.get('/', async (_request, response) => {
+examsRouter.get('/', async (_req, res) => {
   const exam = await Exam.find({}).populate('course')
-  response.json(exam)
+  res.json(exam)
 })
 
-examsRouter.get('/:id', async (request, response) => {
-  const exam = await Exam.findById(request.params.id)
+examsRouter.get('/:id', async (req, res) => {
+  const exam = await Exam.findById(req.params.id)
   if (exam) {
-    response.json(exam)
+    res.json(exam)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-examsRouter.put('/:id', async (request, response) => {
-  const body = request.body
+examsRouter.put('/:id', async (req, res) => {
+  const body = req.body
 
   const exam = {
     label: body.label,
@@ -90,17 +90,17 @@ examsRouter.put('/:id', async (request, response) => {
     maxAttempts: body.maxAttempts
   }
 
-  const updatedExam = await Exam.findByIdAndUpdate(request.params.id, exam, {
+  const updatedExam = await Exam.findByIdAndUpdate(req.params.id, exam, {
     new: true,
     runValidators: true,
     context: 'query'
   })
-  response.json(updatedExam)
+  res.json(updatedExam)
 })
 
-examsRouter.delete('/:id', async (request, response) => {
-  await Exam.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+examsRouter.delete('/:id', async (req, res) => {
+  await Exam.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
 export default examsRouter

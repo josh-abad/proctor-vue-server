@@ -1,25 +1,25 @@
 import { NextFunction, Request, Response } from 'express'
 import logger from './logger'
 
-const unknownEndpoint = (_request: Request, response: Response): void => {
-  response.status(404).send({ error: 'unknown endpoint' })
+const unknownEndpoint = (_req: Request, res: Response): void => {
+  res.status(404).send({ error: 'unknown endpoint' })
 }
 
-const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction): Response | void => {
+const errorHandler = (error: Error, _req: Request, res: Response, next: NextFunction): Response | void => {
   if (error.name === 'CastError') {
-    return response.status(400).send({
+    return res.status(400).send({
       error: 'malformatted id'
     })
   } else if (error.name === 'ValidationError') {
-    return response.status(400).json({
+    return res.status(400).json({
       error: error.message
     })
   } else if (error.name === 'JsonWebTokenError') {
-    return response.status(401).json({
+    return res.status(401).json({
       error: 'invalid token'
     })
   } else if (error.name === 'TokenExpiredError') {
-    return response.status(401).json({
+    return res.status(401).json({
       error: 'Token has expired.'
     })
   }

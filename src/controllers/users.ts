@@ -14,12 +14,12 @@ import config from '@/utils/config'
 
 const usersRouter = Router()
 
-usersRouter.post('/', async (request, response): Promise<Response | void> => {
-  const body = request.body
+usersRouter.post('/', async (req, res): Promise<Response | void> => {
+  const body = req.body
 
   const emailExists = await User.exists({ email: body.email })
   if (emailExists) {
-    return response.status(401).json({
+    return res.status(401).json({
       error: 'Email is already taken.'
     })
   }
@@ -37,7 +37,7 @@ usersRouter.post('/', async (request, response): Promise<Response | void> => {
   })
 
   if (!config.SECRET) {
-    return response.status(401).end()
+    return res.status(401).end()
   }
 
   const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, { expiresIn: '1h' })
@@ -45,68 +45,68 @@ usersRouter.post('/', async (request, response): Promise<Response | void> => {
   sendVerificationEmail(user.email, token)
 
   const savedUser = await user.save()
-  response.json(savedUser.toJSON())
+  res.json(savedUser.toJSON())
 })
 
-usersRouter.get('/', async (_request, response) => {
+usersRouter.get('/', async (_req, res) => {
   const users = await User.find({})
-  response.json(users)
+  res.json(users)
 })
 
-usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
-  const user = await User.findById(request.params.id)
+usersRouter.get('/:id', async (req, res): Promise<Response | void> => {
+  const user = await User.findById(req.params.id)
   if (user) {
-    response.json(user)
+    res.json(user)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-usersRouter.get('/:id/courses', async (request, response) => {
-  const user = await User.findById(request.params.id).populate('courses')
+usersRouter.get('/:id/courses', async (req, res) => {
+  const user = await User.findById(req.params.id).populate('courses')
   if (user) {
-    response.json(user.courses)
+    res.json(user.courses)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-usersRouter.get('/:id/attempts', async (request, response) => {
-  const attempts = await ExamAttempt.find({ user: request.params.id })
+usersRouter.get('/:id/attempts', async (req, res) => {
+  const attempts = await ExamAttempt.find({ user: req.params.id })
     .populate('exam')
     .populate('examResult')
-  response.json(attempts)
+  res.json(attempts)
 })
 
-usersRouter.put('/:id', async (request, response) => {
-  const body = request.body
+usersRouter.put('/:id', async (req, res) => {
+  const body = req.body
 
-  const oldUser = await User.findById(request.params.id)
+  const oldUser = await User.findById(req.params.id)
   if (oldUser) {
     oldUser.name = body.name || oldUser.name
     oldUser.courses = body.courses || oldUser.courses
 
     const updatedUser = await oldUser.save()
-    response.json(updatedUser.toJSON())
+    res.json(updatedUser.toJSON())
   }
 })
 
-usersRouter.get('/:id/recent-courses', async (request, response) => {
-  const user = await User.findById(request.params.id).populate('recentCourses')
+usersRouter.get('/:id/recent-courses', async (req, res) => {
+  const user = await User.findById(req.params.id).populate('recentCourses')
   if (user) {
-    response.json(user.recentCourses)
+    res.json(user.recentCourses)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-usersRouter.put('/:id/recent-courses', async (request, response) => {
-  const body = request.body
+usersRouter.put('/:id/recent-courses', async (req, res) => {
+  const body = req.body
 
-  const user = await User.findById(request.params.id)
+  const user = await User.findById(req.params.id)
   if (user && body.courseId) {
     if (!user.courses.some(courseId => courseId.toString() === body.courseId)) {
-      response.status(401).json({
+      res.status(401).json({
         error: 'Student is not enrolled in course.'
       })
       return
@@ -118,20 +118,20 @@ usersRouter.put('/:id/recent-courses', async (request, response) => {
 
     user.recentCourses.push(body.courseId)
     const updatedUser = await user.save()
-    response.json(updatedUser.recentCourses)
+    res.json(updatedUser.recentCourses)
   }
 })
 
-usersRouter.delete('/:id', async (request, response) => {
-  await User.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+usersRouter.delete('/:id', async (req, res) => {
+  await User.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
-usersRouter.get('/:id/upcoming-exams', async (request, response) => {
-  const user = await User.findById(request.params.id)
+usersRouter.get('/:id/upcoming-exams', async (req, res) => {
+  const user = await User.findById(req.params.id)
 
   if (!user) {
-    response.status(404).end()
+    res.status(404).end()
     return
   }
 
@@ -139,14 +139,14 @@ usersRouter.get('/:id/upcoming-exams', async (request, response) => {
 
   const events = await helper.getEvents(exams)
 
-  response.json(events)
+  res.json(events)
 })
 
-usersRouter.get('/:id/recent-activity', async (request, response) => {
-  const user = await User.findById(request.params.id)
+usersRouter.get('/:id/recent-activity', async (req, res) => {
+  const user = await User.findById(req.params.id)
 
   if (!user) {
-    response.status(404).end()
+    res.status(404).end()
     return
   }
 
@@ -189,15 +189,15 @@ usersRouter.get('/:id/recent-activity', async (request, response) => {
     return new Date(b.date).valueOf() - new Date(a.date).valueOf()
   })
 
-  response.json(events)
+  res.json(events)
 })
 
-usersRouter.post('/:id/reference-image', upload.single('image'), async (request, response) => {
-  const filename = (request.file as Express.MulterS3.File).key
+usersRouter.post('/:id/reference-image', upload.single('image'), async (req, res) => {
+  const filename = (req.file as Express.MulterS3.File).key
   const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
 
-  const updatedUser = await User.findByIdAndUpdate(request.params.id, { referenceImageUrl }, { new: true })
-  response.json(updatedUser)
+  const updatedUser = await User.findByIdAndUpdate(req.params.id, { referenceImageUrl }, { new: true })
+  res.json(updatedUser)
 })
 
 export default usersRouter
