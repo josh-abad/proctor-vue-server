@@ -4,7 +4,7 @@ import Exam, { ExamDocument } from '@/models/exam'
 import config from '@/utils/config'
 import jwt from 'jsonwebtoken'
 import User from '@/models/user'
-import helper, { UserToken } from './controller_helper'
+import helper, { UserToken } from './controller-helper'
 
 const examsRouter = Router()
 

@@ -2,10 +2,10 @@ import { Response, Router } from 'express'
 import config from '@/utils/config'
 import User from '@/models/user'
 import Exam from '@/models/exam'
-import ExamResult, { Score } from '@/models/exam_result'
-import ExamAttempt from '@/models/exam_attempt'
+import ExamResult, { Score } from '@/models/exam-result'
+import ExamAttempt from '@/models/exam-attempt'
 import jwt from 'jsonwebtoken'
-import helper, { AttemptToken } from './controller_helper'
+import helper, { AttemptToken } from './controller-helper'
 
 const examResultsRouter = Router()
 

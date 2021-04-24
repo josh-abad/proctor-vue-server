@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { Response, Router } from 'express'
 import User from '@/models/user'
-import helper, { UserToken } from './controller_helper'
+import helper, { UserToken } from './controller-helper'
 import config from '@/utils/config'
 
 const verifyRouter = Router()

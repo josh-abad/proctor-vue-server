@@ -1,8 +1,8 @@
 import { Schema, Document, model } from 'mongoose'
 import uniqueValidator from 'mongoose-unique-validator'
 import Course from './course'
-import ExamAttempt from './exam_attempt'
-import ExamResult from './exam_result'
+import ExamAttempt from './exam-attempt'
+import ExamResult from './exam-result'
 
 export interface UserDocument extends Document {
   name: {
