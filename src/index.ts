@@ -1,3 +1,4 @@
+import 'module-alias/register'
 import app from '@/app'
 import http from 'http'
 import config from '@/utils/config'
