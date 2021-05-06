@@ -68,8 +68,50 @@ coursesRouter.get('/:id/exams', async (req, res) => {
   if (course) {
     const exams = await Exam.find({ _id: { $in: course.exams } }).populate('course')
     res.json(exams)
-  } else {
+coursesRouter.get('/:id/grades/:user', async (req, res) => {
+  const { id, user } = req.params
+
+  const examsInCourse = await Exam.find({ course: id })
+
+  const course = await Course.findById(id)
+
+  if (!course) {
     res.status(404).end()
+    return
+  }
+
+  const grades: CourseGrades = {
+    courseId: course._id,
+    courseName: course.name,
+    exams: [],
+    courseTotal: 0
+  }
+
+  // TODO: allow custom weight
+  const weight = 1 / examsInCourse.length
+  for (const exam of examsInCourse) {
+    const examAttempts = await ExamAttempt.find({ exam: exam.id, user })
+
+    const highestScore = examAttempts.reduce((a, b) => {
+      return Math.max(a, b.score)
+    }, 0)
+
+    grades.exams.push({
+      weight,
+      label: exam.label,
+      id: exam.id,
+      weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
+      grade: Math.floor(highestScore / exam.examItems.length * 100)
+    })
+  }
+
+  grades.courseTotal = Math.round(
+    grades.exams
+      .map(exam => exam.grade * weight)
+      .reduce((a, b) => a + b, 0)
+  )
+
+  res.json(grades)
   }
 })
 
