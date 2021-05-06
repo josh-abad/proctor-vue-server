@@ -17,3 +17,16 @@ export interface AttemptToken {
   attemptId: string;
   userId: string;
 }
+
+export interface CourseGrades {
+  courseName: string;
+  courseId: string;
+  exams: {
+    label: string;
+    id: string;
+    weight: number;
+    weightPercentage: string;
+    grade: number;
+  }[];
+  courseTotal: number;
+}

@@ -55,10 +55,38 @@ usersRouter.get('/', async (_req, res) => {
   res.json(users)
 })
 
+usersRouter.get('/students', async (_req, res) => {
+  const students = await User.find({ role: 'student' })
+  res.json(students)
+})
+
+usersRouter.get('/students/:id', async (req, res) => {
+  const user = await User.findOne({ role: 'student', _id: req.params.id })
+  if (user) {
+    res.json(user)
+  } else {
+    res.status(404).end()
+  }
+})
+
+usersRouter.get('/coordinators', async (_req, res) => {
+  const coordinators = await User.find({ role: 'coordinator' })
+  res.json(coordinators)
+})
+
 usersRouter.get('/:id', async (req, res) => {
   const user = await User.findById(req.params.id)
   if (user) {
     res.json(user)
+  } else {
+    res.status(404).end()
+  }
+})
+
+usersRouter.get('/:id/avatar', async (req, res) => {
+  const user = await User.findById(req.params.id)
+  if (user) {
+    res.json({ avatarUrl: user.avatarUrl })
   } else {
     res.status(404).end()
   }
@@ -129,6 +157,52 @@ usersRouter.delete('/:id', async (req, res) => {
   res.status(204).end()
 })
 
+usersRouter.get('/v2/:id/upcoming-exams', async (req, res) => {
+  const user = await User.findById(req.params.id)
+
+  if (!user) {
+    res.status(404).end()
+    return
+  }
+
+  const exams = await Exam.find({
+    course: {
+      $in: user.courses
+    },
+    startDate: {
+      $gt: new Date()
+    }
+  }).populate('course')
+
+  res.json(exams)
+})
+
+usersRouter.get('/:id/open-exams', async (req, res) => {
+  const user = await User.findById(req.params.id)
+
+  if (!user) {
+    res.status(404).end()
+    return
+  }
+
+  const exams = await Exam.find({
+    course: {
+      $in: user.courses
+    },
+    startDate: {
+      $lte: new Date()
+    },
+    endDate: {
+      $gte: new Date()
+    }
+  }).populate('course')
+
+  res.json(exams)
+})
+
+/**
+ * @deprecated Use /v2/:id/upcoming-exams instead
+ */
 usersRouter.get('/:id/upcoming-exams', async (req, res) => {
   const user = await User.findById(req.params.id)
 

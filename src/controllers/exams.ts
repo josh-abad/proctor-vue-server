@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken'
 import User from '@/models/user'
 import helper from './controller-helper'
 import { UserToken } from '@/types'
+import ExamAttempt from '@/models/exam-attempt'
 
 const examsRouter = Router()
 
@@ -77,6 +78,18 @@ examsRouter.get('/:id', async (req, res) => {
   } else {
     res.status(404).end()
   }
+})
+
+examsRouter.get('/:exam/taken-by/:user', async (req, res) => {
+  const { exam, user } = req.params
+  const count = await ExamAttempt.countDocuments({ exam, user })
+  res.json({ isTaken: count > 0 })
+})
+
+examsRouter.get('/:exam/attempts/:user', async (req, res) => {
+  const { exam, user } = req.params
+  const examAttemptsByUser = await ExamAttempt.find({ exam, user })
+  res.json(examAttemptsByUser)
 })
 
 examsRouter.put('/:id', async (req, res) => {

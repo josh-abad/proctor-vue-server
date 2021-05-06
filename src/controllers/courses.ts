@@ -1,8 +1,10 @@
+import { CourseGrades } from '@/types'
 import { Router } from 'express'
 import Course, { CourseDocument } from '@/models/course'
 import Exam from '@/models/exam'
 import User from '@/models/user'
 import helper from '@/utils/helper'
+import ExamAttempt from '@/models/exam-attempt'
 
 const coursesRouter = Router()
 
@@ -63,11 +65,54 @@ coursesRouter.get('/:id', async (req, res) => {
   }
 })
 
-coursesRouter.get('/:id/exams', async (req, res) => {
+coursesRouter.get('/:id/students', async (req, res) => {
   const course = await Course.findById(req.params.id)
   if (course) {
-    const exams = await Exam.find({ _id: { $in: course.exams } }).populate('course')
-    res.json(exams)
+    const students = await User.find({ _id: { $in: course.studentsEnrolled } })
+    res.json(students)
+  } else {
+    res.status(404).end()
+  }
+})
+
+coursesRouter.get('/:id/progress/:user', async (req, res) => {
+  const { id, user } = req.params
+
+  const course = await Course.findById(id)
+
+  if (!course) {
+    res.status(404).end()
+    return
+  }
+
+  const attempts = await ExamAttempt.find({
+    exam: {
+      $in: course.exams
+    },
+    user
+  })
+
+  const uniqueExamsTakenByUser = attempts
+    .map(a => a.exam.toString())
+    .reduce((a, b) => {
+      if (!a.includes(b)) {
+        a.push(b)
+      }
+      return a
+    }, [] as string[])
+
+  const percentage = uniqueExamsTakenByUser.length === 0
+    ? 0
+    : Math.floor(uniqueExamsTakenByUser.length / course.exams.length * 100)
+
+  res.json({ percentage })
+})
+
+coursesRouter.get('/:id/exams', async (req, res) => {
+  const exams = await Exam.find({ course: req.params.id }).populate('course')
+  res.json(exams)
+})
+
 coursesRouter.get('/:id/grades/:user', async (req, res) => {
   const { id, user } = req.params
 
@@ -112,7 +157,23 @@ coursesRouter.get('/:id/grades/:user', async (req, res) => {
   )
 
   res.json(grades)
-  }
+})
+
+coursesRouter.get('/:course/exams/week/:week', async (req, res) => {
+  const { course, week } = req.params
+  const exams = await Exam.find({ course, week: Number(week) }).populate('course')
+  res.json(exams)
+})
+
+coursesRouter.get('/v2/:id/upcoming-exams', async (req, res) => {
+  const exams = await Exam.find({
+    course: req.params.id,
+    startDate: {
+      $gt: new Date()
+    }
+  }).populate('course')
+
+  res.json(exams)
 })
 
 coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
