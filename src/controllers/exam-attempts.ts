@@ -3,24 +3,14 @@ import Exam from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
 import config from '@/utils/config'
 import jwt from 'jsonwebtoken'
-import User from '@/models/user'
-import helper from './controller-helper'
-import { UserToken } from '@/types'
+import { authenticate } from '@/utils/middleware'
 
 const examAttemptsRouter = Router()
 
-examAttemptsRouter.post('/', async (req, res) => {
+examAttemptsRouter.post('/', authenticate, async (req, res) => {
   const body = req.body
-  
-  const token = helper.getTokenFrom(req)
-  
-  const decodedToken = jwt.verify(token as string, config.SECRET as string)
-  if (!token || !(decodedToken as UserToken).id) {
-    res.status(401).json({ error: 'token missing or invalid' })
-    return
-  }
 
-  const user = await User.findById((decodedToken as UserToken).id)
+  const user = req.user
   const exam = await Exam.findById(body.examId)
 
   if (!(exam && user)) {

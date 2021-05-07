@@ -1,27 +1,15 @@
 import { Router } from 'express'
 import Course from '@/models/course'
 import Exam, { ExamDocument } from '@/models/exam'
-import config from '@/utils/config'
-import jwt from 'jsonwebtoken'
-import User from '@/models/user'
-import helper from './controller-helper'
-import { UserToken } from '@/types'
 import ExamAttempt from '@/models/exam-attempt'
+import { authenticate } from '@/utils/middleware'
 
 const examsRouter = Router()
 
-examsRouter.post('/', async (req, res) => {
+examsRouter.post('/', authenticate, async (req, res) => {
   const body = req.body
 
-  const token = helper.getTokenFrom(req)
-  
-  const decodedToken = jwt.verify(token as string, config.SECRET as string)
-  if (!token || !(decodedToken as UserToken).id) {
-    res.status(401).json({ error: 'token missing or invalid' })
-    return
-  }
-
-  const user = await User.findById((decodedToken as UserToken).id)
+  const user = req.user
   const course = await Course.findById(body.courseId)
 
   if (!(course && user)) {
