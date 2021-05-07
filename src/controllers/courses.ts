@@ -85,21 +85,12 @@ coursesRouter.get('/:id/progress/:user', async (req, res) => {
     return
   }
 
-  const attempts = await ExamAttempt.find({
+  const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
     exam: {
       $in: course.exams
     },
     user
   })
-
-  const uniqueExamsTakenByUser = attempts
-    .map(a => a.exam.toString())
-    .reduce((a, b) => {
-      if (!a.includes(b)) {
-        a.push(b)
-      }
-      return a
-    }, [] as string[])
 
   const percentage = uniqueExamsTakenByUser.length === 0
     ? 0
