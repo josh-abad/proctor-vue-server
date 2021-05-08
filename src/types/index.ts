@@ -6,6 +6,7 @@ export interface Event {
   subjectUrl: string;
   action: string;
   date: Date;
+  avatarUrl: string;
 }
 
 export interface UserToken {

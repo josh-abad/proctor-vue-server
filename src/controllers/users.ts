@@ -83,15 +83,6 @@ usersRouter.get('/:id', async (req, res) => {
   }
 })
 
-usersRouter.get('/:id/avatar', async (req, res) => {
-  const user = await User.findById(req.params.id)
-  if (user) {
-    res.json({ avatarUrl: user.avatarUrl })
-  } else {
-    res.status(404).end()
-  }
-})
-
 usersRouter.get('/:id/courses', async (req, res) => {
   const user = await User.findById(req.params.id).populate('courses')
   if (user) {
@@ -243,7 +234,8 @@ usersRouter.get('/:id/recent-activity', async (req, res) => {
       subjectId: user.id,
       subjectUrl: `/user/${user.id}`,
       predicate: exam.label,
-      predicateUrl: `/courses/${course.id}/exams/${exam.id}`
+      predicateUrl: `/courses/${course.id}/exams/${exam.id}`,
+      avatarUrl: user.avatarUrl
     }
     const startAttemptEvent: Event = {
       ...sharedEventInfo,
