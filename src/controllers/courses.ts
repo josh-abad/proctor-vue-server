@@ -3,7 +3,6 @@ import { Router } from 'express'
 import Course, { CourseDocument } from '@/models/course'
 import Exam from '@/models/exam'
 import User from '@/models/user'
-import helper from '@/utils/helper'
 import ExamAttempt from '@/models/exam-attempt'
 
 const coursesRouter = Router()
@@ -156,7 +155,7 @@ coursesRouter.get('/:course/exams/week/:week', async (req, res) => {
   res.json(exams)
 })
 
-coursesRouter.get('/v2/:id/upcoming-exams', async (req, res) => {
+coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
   const exams = await Exam.find({
     course: req.params.id,
     startDate: {
@@ -165,20 +164,6 @@ coursesRouter.get('/v2/:id/upcoming-exams', async (req, res) => {
   }).populate('course')
 
   res.json(exams)
-})
-
-coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
-  const course = await Course.findById(req.params.id)
-
-  if (!course) {
-    res.status(404).end()
-    return
-  }
-
-  const exams = await Exam.find({ _id: { $in: course.exams } })
-  const events = await helper.getEvents(exams)
-
-  res.json(events)
 })
 
 coursesRouter.put('/:courseId', async (req, res) => {

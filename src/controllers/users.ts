@@ -9,7 +9,6 @@ import ExamAttempt from '@/models/exam-attempt'
 import Exam from '@/models/exam'
 import Course from '@/models/course'
 import { Event } from '@/types'
-import helper from '@/utils/helper'
 import config from '@/utils/config'
 
 const usersRouter = Router()
@@ -148,7 +147,7 @@ usersRouter.delete('/:id', async (req, res) => {
   res.status(204).end()
 })
 
-usersRouter.get('/v2/:id/upcoming-exams', async (req, res) => {
+usersRouter.get('/:id/upcoming-exams', async (req, res) => {
   const user = await User.findById(req.params.id)
 
   if (!user) {
@@ -189,24 +188,6 @@ usersRouter.get('/:id/open-exams', async (req, res) => {
   }).populate('course')
 
   res.json(exams)
-})
-
-/**
- * @deprecated Use /v2/:id/upcoming-exams instead
- */
-usersRouter.get('/:id/upcoming-exams', async (req, res) => {
-  const user = await User.findById(req.params.id)
-
-  if (!user) {
-    res.status(404).end()
-    return
-  }
-
-  const exams = await Exam.find({ course: { $in: user.courses } })
-
-  const events = await helper.getEvents(exams)
-
-  res.json(events)
 })
 
 usersRouter.get('/:id/recent-activity', async (req, res) => {
