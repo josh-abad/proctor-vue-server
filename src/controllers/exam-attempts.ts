@@ -20,9 +20,9 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
     return
   }
 
-  const pastAttempts = await ExamAttempt.find({ user: user._id, exam: exam._id })
+  const pastAttempts = await ExamAttempt.countDocuments({ user: user._id, exam: exam._id })
 
-  if (pastAttempts.length >= exam.maxAttempts) {
+  if (pastAttempts >= exam.maxAttempts) {
     res.status(401).json({
       'error': 'max attempts reached'
     })
