@@ -15,10 +15,10 @@ export const authenticate: RequestHandler = async (req, res, next): Promise<void
       req.user = await User.findById((decodedToken as UserToken).id) ?? undefined
       next()
     } catch (error) {
-      res.sendStatus(401).end()
+      res.sendStatus(401)
     }
   } else {
-    res.sendStatus(401).end()
+    res.sendStatus(401)
   }
 }
 
