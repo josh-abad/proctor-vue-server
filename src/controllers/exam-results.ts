@@ -65,13 +65,7 @@ examResultsRouter.post('/', async (req, res) => {
   })
 })
 
-examResultsRouter.get('/', async (req, res) => {
-  const userId = req.query.userId
-  if (userId) {
-    const examResultsByUser = await ExamResult.find({ user: userId as string }).populate('user')
-    res.json(examResultsByUser)
-    return
-  }
+examResultsRouter.get('/', async (_req, res) => {
   const examResult = await ExamResult.find({}).populate('user')
   res.json(examResult)
 })

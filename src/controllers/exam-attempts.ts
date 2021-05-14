@@ -53,14 +53,7 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
   res.json({ token: attemptToken, attempt: await savedExamAttempt.populate({ path: 'exam', populate: { path: 'course' } }).execPopulate() })
 })
 
-examAttemptsRouter.get('/', async (req, res) => {
-  const userId = req.query.userId
-  if (userId) {
-    const examAttemptsByUser = await ExamAttempt.find({ user: userId as string }).populate({ path: 'exam', populate: { path: 'course' } })
-    res.json(examAttemptsByUser)
-    return
-  }
-
+examAttemptsRouter.get('/', async (_req, res) => {
   const examAttempts = await ExamAttempt.find({}).populate({ path: 'exam', populate: { path: 'course' } })
   res.json(examAttempts)
 })
