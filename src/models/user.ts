@@ -3,6 +3,7 @@ import uniqueValidator from 'mongoose-unique-validator'
 import Course from './course'
 import ExamAttempt from './exam-attempt'
 import ExamResult from './exam-result'
+import { Role } from '@/types'
 
 export interface UserDocument extends Document {
   name: {
@@ -17,7 +18,7 @@ export interface UserDocument extends Document {
   verified: boolean,
   avatarUrl: string,
   referenceImageUrl?: string,
-  role: 'student' | 'coordinator' | 'admin'
+  role: Role
 }
 
 const userSchema = new Schema({

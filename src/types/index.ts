@@ -1,3 +1,5 @@
+export type Role = 'student' | 'coordinator' | 'admin'
+
 export interface Event {
   location: string;
   locationUrl: string;
