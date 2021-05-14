@@ -50,12 +50,12 @@ usersRouter.post('/', async (req, res) => {
 })
 
 usersRouter.get('/', async (_req, res) => {
-  const users = await User.find({})
+  const users = await User.find({}).sort('name.last')
   res.json(users)
 })
 
 usersRouter.get('/students', async (_req, res) => {
-  const students = await User.find({ role: 'student' })
+  const students = await User.find({ role: 'student' }).sort('name.last')
   res.json(students)
 })
 
@@ -69,7 +69,7 @@ usersRouter.get('/students/:id', async (req, res) => {
 })
 
 usersRouter.get('/coordinators', async (_req, res) => {
-  const coordinators = await User.find({ role: 'coordinator' })
+  const coordinators = await User.find({ role: 'coordinator' }).sort('name.last')
   res.json(coordinators)
 })
 
@@ -83,9 +83,12 @@ usersRouter.get('/:id', async (req, res) => {
 })
 
 usersRouter.get('/:id/courses', async (req, res) => {
-  const user = await User.findById(req.params.id).populate('courses')
+  const user = await User.findById(req.params.id)
   if (user) {
-    res.json(user.courses)
+    const courses = await Course
+      .find({ _id: { $in: user.courses } })
+      .sort('name')
+    res.json(courses)
   } else {
     res.status(404).end()
   }
@@ -155,14 +158,17 @@ usersRouter.get('/:id/upcoming-exams', async (req, res) => {
     return
   }
 
-  const exams = await Exam.find({
-    course: {
-      $in: user.courses
-    },
-    startDate: {
-      $gt: new Date()
-    }
-  }).populate('course')
+  const exams = await Exam
+    .find({
+      course: {
+        $in: user.courses
+      },
+      startDate: {
+        $gt: new Date()
+      }
+    })
+    .sort('startDate')
+    .populate('course')
 
   res.json(exams)
 })
@@ -175,17 +181,20 @@ usersRouter.get('/:id/open-exams', async (req, res) => {
     return
   }
 
-  const exams = await Exam.find({
-    course: {
-      $in: user.courses
-    },
-    startDate: {
-      $lte: new Date()
-    },
-    endDate: {
-      $gte: new Date()
-    }
-  }).populate('course')
+  const exams = await Exam
+    .find({
+      course: {
+        $in: user.courses
+      },
+      startDate: {
+        $lte: new Date()
+      },
+      endDate: {
+        $gte: new Date()
+      }
+    })
+    .sort('endDate')
+    .populate('course')
 
   res.json(exams)
 })

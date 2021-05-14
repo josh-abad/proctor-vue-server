@@ -51,7 +51,10 @@ coursesRouter.get('/', async (req, res) => {
       return
     }
   }
-  const courses = await Course.find({}).populate('coordinator')
+  const courses = await Course
+    .find({})
+    .sort('name')
+    .populate('coordinator')
   res.json(courses)
 })
 
@@ -156,12 +159,15 @@ coursesRouter.get('/:course/exams/week/:week', async (req, res) => {
 })
 
 coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
-  const exams = await Exam.find({
-    course: req.params.id,
-    startDate: {
-      $gt: new Date()
-    }
-  }).populate('course')
+  const exams = await Exam
+    .find({
+      course: req.params.id,
+      startDate: {
+        $gt: new Date()
+      }
+    })
+    .sort('startDate')
+    .populate('course')
 
   res.json(exams)
 })
