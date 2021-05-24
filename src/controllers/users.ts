@@ -115,9 +115,10 @@ usersRouter.put('/:id', async (req, res) => {
 })
 
 usersRouter.get('/:id/recent-courses', async (req, res) => {
+  const limit = req.query.limit ? Number(req.query.limit) : 5
   const user = await User.findById(req.params.id).populate('recentCourses')
   if (user) {
-    res.json(user.recentCourses)
+    res.json([...user.recentCourses].reverse().slice(0, limit))
   } else {
     res.status(404).end()
   }
