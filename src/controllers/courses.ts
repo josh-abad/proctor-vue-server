@@ -1,6 +1,6 @@
 import { CourseGrades } from '@/types'
 import { Router } from 'express'
-import Course, { CourseDocument } from '@/models/course'
+import Course from '@/models/course'
 import Exam from '@/models/exam'
 import User from '@/models/user'
 import ExamAttempt from '@/models/exam-attempt'
@@ -32,25 +32,7 @@ coursesRouter.post('/', async (req, res) => {
   res.json(await savedCourse.populate('coordinator').execPopulate())
 })
 
-coursesRouter.get('/', async (req, res) => {
-  const userId = req.query.userId
-  if (userId) {
-    const user = await User.findById(userId)
-    if (user) {
-      const coursesByUser: CourseDocument[] = []
-      for (const courseId of user.courses) {
-        const course = await Course.findById(courseId)
-        if (course) {
-          coursesByUser.push(course)
-        } else {
-          user.courses = user.courses.filter(id => id !== courseId)
-          await user.save()
-        }
-      }
-      res.json(coursesByUser)
-      return
-    }
-  }
+coursesRouter.get('/', async (_req, res) => {
   const courses = await Course
     .find({})
     .sort('name')
