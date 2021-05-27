@@ -1,12 +1,13 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { Router } from 'express'
-import User from '../models/user'
+import User from '@/models/user'
+import config from '@/utils/config'
 
 const loginRouter = Router()
 
-loginRouter.post('/', async (request, response) => {
-  const body = request.body
+loginRouter.post('/', async (req, res) => {
+  const body = req.body
 
   const user = await User.findOne({ email: body.email }).select('+passwordHash')
   const passwordCorrect = user === null
@@ -14,7 +15,7 @@ loginRouter.post('/', async (request, response) => {
     : await bcrypt.compare(body.password, user.passwordHash ?? '')
 
   if (!(user && passwordCorrect)) {
-    response.status(401).json({
+    res.status(401).json({
       error: 'Invalid email or password.'
     })
     return
@@ -26,11 +27,11 @@ loginRouter.post('/', async (request, response) => {
     role: user.role
   }
 
-  const token = jwt.sign(userForToken, process.env.SECRET as string, { expiresIn: '14 days' })
+  const token = jwt.sign(userForToken, config.SECRET as string, { expiresIn: '14 days' })
   const userCopy = { ...user.toJSON() }
   delete userCopy.passwordHash
 
-  response.status(200).send({ token, ...userCopy })
+  res.status(200).send({ token, ...userCopy })
 })
 
 export default loginRouter

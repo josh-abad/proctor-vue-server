@@ -1,20 +1,22 @@
-import { Response, Router } from 'express'
-import config from '../utils/config'
-import User from '../models/user'
-import Exam from '../models/exam'
-import ExamResult, { Score } from '../models/exam_result'
-import ExamAttempt from '../models/exam_attempt'
+import { Router } from 'express'
+import config from '@/utils/config'
+import User from '@/models/user'
+import Exam from '@/models/exam'
+import ExamResult, { Score } from '@/models/exam-result'
+import ExamAttempt from '@/models/exam-attempt'
 import jwt from 'jsonwebtoken'
-import helper, { AttemptToken } from './controller_helper'
+import helper from './controller-helper'
+import { AttemptToken } from '@/types'
 
 const examResultsRouter = Router()
 
-examResultsRouter.post('/', async (request, response): Promise<Response | void> => {
-  const body = request.body
-  const token = helper.getTokenFrom(request)
-  const decodedToken = jwt.verify(token as string, config.SECRET)
+examResultsRouter.post('/', async (req, res) => {
+  const body = req.body
+  const token = helper.getTokenFrom(req)
+  const decodedToken = jwt.verify(token as string, config.SECRET as string)
   if (!token || !((decodedToken as AttemptToken).attemptId && (decodedToken as AttemptToken).userId)) {
-    return response.status(401).json({ error: 'token missing or invalid' })
+    res.status(401).json({ error: 'token missing or invalid' })
+    return
   }
 
   const exam = await Exam.findById(body.examId)
@@ -57,35 +59,29 @@ examResultsRouter.post('/', async (request, response): Promise<Response | void> 
   const savedAttempt = await attempt?.save()
   const savedExamResult = await examResult.save()
 
-  response.json({
+  res.json({
     examResult: await savedExamResult.populate('user').execPopulate(),
     attempt: savedAttempt?.toJSON()
   })
 })
 
-examResultsRouter.get('/', async (request, response) => {
-  const userId = request.query.userId
-  if (userId) {
-    const examResultsByUser = await ExamResult.find({ user: userId as string }).populate('user')
-    response.json(examResultsByUser)
-    return
-  }
+examResultsRouter.get('/', async (_req, res) => {
   const examResult = await ExamResult.find({}).populate('user')
-  response.json(examResult)
+  res.json(examResult)
 })
 
-examResultsRouter.get('/:id', async (request, response) => {
-  const examResult = await ExamResult.findById(request.params.id).populate('user')
+examResultsRouter.get('/:id', async (req, res) => {
+  const examResult = await ExamResult.findById(req.params.id).populate('user')
   if (examResult) {
-    response.json(examResult)
+    res.json(examResult)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-examResultsRouter.delete('/:id', async (request, response) => {
-  await ExamResult.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+examResultsRouter.delete('/:id', async (req, res) => {
+  await ExamResult.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
 export default examResultsRouter

@@ -2,13 +2,14 @@ import Mail from 'nodemailer/lib/mailer'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
 import SMTPTransport from 'nodemailer/lib/smtp-transport'
-import logger from '../utils/logger'
+import logger from '@/utils/logger'
+import config from '@/utils/config'
 
 const createEmailTransporter = async (): Promise<Mail> => {
   const OAuth2 = google.auth.OAuth2
-  const ouath2Client = new OAuth2(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
+  const ouath2Client = new OAuth2(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
   ouath2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
+    refresh_token: config.GOOGLE_REFRESH_TOKEN
   })
   const accessToken = await ouath2Client.getAccessToken()
 
@@ -17,9 +18,9 @@ const createEmailTransporter = async (): Promise<Mail> => {
     auth: {
       type: 'OAuth2',
       user: 'proctor.vue@gmail.com',
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+      clientId: config.GOOGLE_CLIENT_ID,
+      clientSecret: config.GOOGLE_CLIENT_SECRET,
+      refreshToken: config.GOOGLE_REFRESH_TOKEN,
       accessToken: accessToken.token
     }
   } as SMTPTransport.Options)
@@ -162,7 +163,7 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
           <body style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;">
             <div class="flex flex-col justify-center items-center p-6 text-gray-900"
               style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;align-items: center;justify-content: center;padding: 1.5rem;display: flex;flex-direction: column;color: #111827;">
-              <img class="mt-4" src="cid:logo"
+              <img class="mt-4" src="https://raw.githubusercontent.com/josh-abad/proctor-vue-web/main/src/assets/logo.png"
                 alt="logo" width="125" style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;margin-top: 1rem;">
               <div class="mt-4 text-2xl font-semibold"
                 style="font-family: Segoe UI, Roboto, Helvetica, Arial, sans-serif;font-size: 1.5rem;line-height: 2rem;font-weight: 600;margin-top: 1rem;">
@@ -187,12 +188,7 @@ export const sendVerificationEmail = async (to: string, token: string): Promise<
             </div>
           </body>
         </html>
-    `,
-    attachments: [{
-      filename: 'logo.83d95e82.png',
-      path: `${__dirname}/../public/img/logo.83d95e82.png`,
-      cid: 'logo'
-    }]
+    `
   }
   transporter.sendMail(mailOptions, (error, response) => {
     error ? logger.error(error.message) : logger.info(response)

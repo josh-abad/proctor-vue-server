@@ -1,24 +1,27 @@
 import bcrypt from 'bcrypt'
-import { Response, Router } from 'express'
-import User from '../models/user'
+import { Router } from 'express'
+import User from '@/models/user'
 import md5 from 'md5'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from './email-helper'
-import upload from '../utils/image-upload'
-import ExamAttempt from '../models/exam_attempt'
-import Exam from '../models/exam'
-import helper from '../utils/helper'
+import upload from '@/utils/image-upload'
+import ExamAttempt from '@/models/exam-attempt'
+import Exam from '@/models/exam'
+import Course from '@/models/course'
+import { Event } from '@/types'
+import config from '@/utils/config'
 
 const usersRouter = Router()
 
-usersRouter.post('/', async (request, response): Promise<Response | void> => {
-  const body = request.body
+usersRouter.post('/', async (req, res) => {
+  const body = req.body
 
   const emailExists = await User.exists({ email: body.email })
   if (emailExists) {
-    return response.status(401).json({
+    res.status(401).json({
       error: 'Email is already taken.'
     })
+    return
   }
 
   const saltRounds = 10
@@ -33,73 +36,101 @@ usersRouter.post('/', async (request, response): Promise<Response | void> => {
     passwordHash
   })
 
-  const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET as string, { expiresIn: '1h' })
+  if (!config.SECRET) {
+    res.status(401).end()
+    return
+  }
+
+  const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, { expiresIn: '1h' })
 
   sendVerificationEmail(user.email, token)
 
   const savedUser = await user.save()
-  response.json(savedUser.toJSON())
+  res.json(savedUser.toJSON())
 })
 
-usersRouter.get('/', async (_request, response) => {
-  const users = await User.find({})
-  response.json(users)
+usersRouter.get('/', async (_req, res) => {
+  const users = await User.find({}).sort('name.last')
+  res.json(users)
 })
 
-usersRouter.get('/:id', async (request, response): Promise<Response | void> => {
-  const user = await User.findById(request.params.id)
+usersRouter.get('/students', async (_req, res) => {
+  const students = await User.find({ role: 'student' }).sort('name.last')
+  res.json(students)
+})
+
+usersRouter.get('/students/:id', async (req, res) => {
+  const user = await User.findOne({ role: 'student', _id: req.params.id })
   if (user) {
-    response.json(user)
+    res.json(user)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-usersRouter.get('/:id/courses', async (request, response) => {
-  const user = await User.findById(request.params.id).populate('courses')
+usersRouter.get('/coordinators', async (_req, res) => {
+  const coordinators = await User.find({ role: 'coordinator' }).sort('name.last')
+  res.json(coordinators)
+})
+
+usersRouter.get('/:id', async (req, res) => {
+  const user = await User.findById(req.params.id)
   if (user) {
-    response.json(user.courses)
+    res.json(user)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-usersRouter.get('/:id/attempts', async (request, response) => {
-  const attempts = await ExamAttempt.find({ user: request.params.id })
+usersRouter.get('/:id/courses', async (req, res) => {
+  const user = await User.findById(req.params.id)
+  if (user) {
+    const courses = await Course
+      .find({ _id: { $in: user.courses } })
+      .sort('name')
+    res.json(courses)
+  } else {
+    res.status(404).end()
+  }
+})
+
+usersRouter.get('/:id/attempts', async (req, res) => {
+  const attempts = await ExamAttempt.find({ user: req.params.id })
     .populate('exam')
     .populate('examResult')
-  response.json(attempts)
+  res.json(attempts)
 })
 
-usersRouter.put('/:id', async (request, response) => {
-  const body = request.body
+usersRouter.put('/:id', async (req, res) => {
+  const body = req.body
 
-  const oldUser = await User.findById(request.params.id)
+  const oldUser = await User.findById(req.params.id)
   if (oldUser) {
     oldUser.name = body.name || oldUser.name
     oldUser.courses = body.courses || oldUser.courses
 
     const updatedUser = await oldUser.save()
-    response.json(updatedUser.toJSON())
+    res.json(updatedUser.toJSON())
   }
 })
 
-usersRouter.get('/:id/recent-courses', async (request, response) => {
-  const user = await User.findById(request.params.id).populate('recentCourses')
+usersRouter.get('/:id/recent-courses', async (req, res) => {
+  const limit = req.query.limit ? Number(req.query.limit) : 5
+  const user = await User.findById(req.params.id).populate('recentCourses')
   if (user) {
-    response.json(user.recentCourses)
+    res.json([...user.recentCourses].reverse().slice(0, limit))
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-usersRouter.put('/:id/recent-courses', async (request, response) => {
-  const body = request.body
+usersRouter.put('/:id/recent-courses', async (req, res) => {
+  const body = req.body
 
-  const user = await User.findById(request.params.id)
+  const user = await User.findById(req.params.id)
   if (user && body.courseId) {
     if (!user.courses.some(courseId => courseId.toString() === body.courseId)) {
-      response.status(401).json({
+      res.status(401).json({
         error: 'Student is not enrolled in course.'
       })
       return
@@ -111,36 +142,121 @@ usersRouter.put('/:id/recent-courses', async (request, response) => {
 
     user.recentCourses.push(body.courseId)
     const updatedUser = await user.save()
-    response.json(updatedUser.recentCourses)
+    res.json(updatedUser.recentCourses)
   }
 })
 
-usersRouter.delete('/:id', async (request, response) => {
-  await User.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+usersRouter.delete('/:id', async (req, res) => {
+  await User.findByIdAndDelete(req.params.id)
+  res.status(204).end()
 })
 
-usersRouter.get('/:id/upcoming-exams', async (request, response) => {
-  const user = await User.findById(request.params.id)
+usersRouter.get('/:id/upcoming-exams', async (req, res) => {
+  const user = await User.findById(req.params.id)
 
   if (!user) {
-    response.status(404).end()
+    res.status(404).end()
     return
   }
 
-  const exams = await Exam.find({ course: { $in: user.courses } })
+  const exams = await Exam
+    .find({
+      course: {
+        $in: user.courses
+      },
+      startDate: {
+        $gt: new Date()
+      }
+    })
+    .sort('startDate')
+    .populate('course')
 
-  const events = await helper.getEvents(exams)
-
-  response.json(events)
+  res.json(exams)
 })
 
-usersRouter.post('/:id/reference-image', upload.single('image'), async (request, response) => {
-  const filename = (request.file as Express.MulterS3.File).key
-  const referenceImageUrl = `${process.env.CLOUDFRONT_DOMAIN}${filename}`
+usersRouter.get('/:id/open-exams', async (req, res) => {
+  const user = await User.findById(req.params.id)
 
-  const updatedUser = await User.findByIdAndUpdate(request.params.id, { referenceImageUrl }, { new: true })
-  response.json(updatedUser)
+  if (!user) {
+    res.status(404).end()
+    return
+  }
+
+  const exams = await Exam
+    .find({
+      course: {
+        $in: user.courses
+      },
+      startDate: {
+        $lte: new Date()
+      },
+      endDate: {
+        $gte: new Date()
+      }
+    })
+    .sort('endDate')
+    .populate('course')
+
+  res.json(exams)
+})
+
+usersRouter.get('/:id/recent-activity', async (req, res) => {
+  const user = await User.findById(req.params.id)
+
+  if (!user) {
+    res.status(404).end()
+    return
+  }
+
+  const attempts = await ExamAttempt.find({ user: user.id })
+  const events: Event[] = []
+  for (const attempt of attempts) {
+    const exam = await Exam.findById(attempt.exam)
+    const course = await Course.findById(exam?.course)
+
+    if (!exam || !course) {
+      continue
+    }
+
+    const sharedEventInfo = {
+      location: course.name,
+      locationUrl: `/courses/${course.id}`,
+      subject: user.name.first,
+      subjectId: user.id,
+      subjectUrl: `/user/${user.id}`,
+      predicate: exam.label,
+      predicateUrl: `/courses/${course.id}/exams/${exam.id}`,
+      avatarUrl: user.avatarUrl
+    }
+    const startAttemptEvent: Event = {
+      ...sharedEventInfo,
+      action: 'started',
+      date: attempt.startDate
+    }
+    events.push(startAttemptEvent)
+    if (attempt.status === 'completed') {
+      const submitAttemptEvent: Event = {
+        ...sharedEventInfo,
+        action: 'completed',
+        date: attempt.submittedDate
+      }
+      events.push(submitAttemptEvent)
+    }
+  }
+
+  events.sort((a, b) => {
+    return new Date(b.date).valueOf() - new Date(a.date).valueOf()
+  })
+
+  res.json(events)
+})
+
+usersRouter.post('/:id/reference-image', upload.single('image'), async (req, res) => {
+  const filename = (req.file as Express.MulterS3.File).key
+  const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
+
+  const updatedUser = await User.findByIdAndUpdate(req.params.id, { referenceImageUrl }, { new: true })
+  res.json(updatedUser)
 })
 
 export default usersRouter

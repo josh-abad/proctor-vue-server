@@ -1,7 +1,8 @@
-import app from './app'
+import 'module-alias/register'
+import app from '@/app'
 import http from 'http'
-import config from './utils/config'
-import logger from './utils/logger'
+import config from '@/utils/config'
+import logger from '@/utils/logger'
 
 const server = http.createServer(app)
 

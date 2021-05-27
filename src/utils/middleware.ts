@@ -1,25 +1,46 @@
-import { NextFunction, Request, Response } from 'express'
+import { NextFunction, Request, RequestHandler, Response } from 'express'
 import logger from './logger'
+import config from './config'
+import jwt from 'jsonwebtoken'
+import { UserToken } from '@/types'
+import User from '@/models/user'
 
-const unknownEndpoint = (_request: Request, response: Response): void => {
-  response.status(404).send({ error: 'unknown endpoint' })
+export const authenticate: RequestHandler = async (req, res, next): Promise<void> => {
+  const authorization = req.get('authorization')
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    const token = authorization.substring(7)
+  
+    try {
+      const decodedToken = jwt.verify(token, config.SECRET as string)
+      req.user = await User.findById((decodedToken as UserToken).id) ?? undefined
+      next()
+    } catch (error) {
+      res.sendStatus(401)
+    }
+  } else {
+    res.sendStatus(401)
+  }
 }
 
-const errorHandler = (error: Error, _request: Request, response: Response, next: NextFunction): Response | void => {
+const unknownEndpoint = (_req: Request, res: Response): void => {
+  res.status(404).send({ error: 'unknown endpoint' })
+}
+
+const errorHandler = (error: Error, _req: Request, res: Response, next: NextFunction): Response | void => {
   if (error.name === 'CastError') {
-    return response.status(400).send({
+    return res.status(400).send({
       error: 'malformatted id'
     })
   } else if (error.name === 'ValidationError') {
-    return response.status(400).json({
+    return res.status(400).json({
       error: error.message
     })
   } else if (error.name === 'JsonWebTokenError') {
-    return response.status(401).json({
+    return res.status(401).json({
       error: 'invalid token'
     })
   } else if (error.name === 'TokenExpiredError') {
-    return response.status(401).json({
+    return res.status(401).json({
       error: 'Token has expired.'
     })
   }
@@ -30,6 +51,7 @@ const errorHandler = (error: Error, _request: Request, response: Response, next:
 }
 
 export default {
+  authenticate,
   unknownEndpoint,
   errorHandler
 }

@@ -1,17 +1,18 @@
-import { Response, Router } from 'express'
-import Course, { CourseDocument } from '../models/course'
-import Exam from '../models/exam'
-import User from '../models/user'
-import helper from '../utils/helper'
+import { CourseGrades } from '@/types'
+import { Router } from 'express'
+import Course from '@/models/course'
+import Exam from '@/models/exam'
+import User from '@/models/user'
+import ExamAttempt from '@/models/exam-attempt'
 
 const coursesRouter = Router()
 
-coursesRouter.post('/', async (request, response) => {
-  const body = request.body
+coursesRouter.post('/', async (req, res) => {
+  const body = req.body
 
   const coordinator = await User.findById(body.coordinatorId)
   if (coordinator?.role !== 'coordinator') {
-    response.status(401).send({
+    res.status(401).send({
       error: 'invalid coordinator id'
     })
     return
@@ -28,95 +29,165 @@ coursesRouter.post('/', async (request, response) => {
   await coordinator.save()
 
   const savedCourse = await course.save()
-  response.json(await savedCourse.populate('coordinator').execPopulate())
+  res.json(await savedCourse.populate('coordinator').execPopulate())
 })
 
-coursesRouter.get('/', async (request, response) => {
-  const userId = request.query.userId
-  if (userId) {
-    const user = await User.findById(userId)
-    if (user) {
-      const coursesByUser: CourseDocument[] = []
-      for (const courseId of user.courses) {
-        const course = await Course.findById(courseId)
-        if (course) {
-          coursesByUser.push(course)
-        } else {
-          user.courses = user.courses.filter(id => id !== courseId)
-          await user.save()
-        }
-      }
-      response.json(coursesByUser)
-      return
-    }
-  }
-  const courses = await Course.find({}).populate('coordinator')
-  response.json(courses)
+coursesRouter.get('/', async (_req, res) => {
+  const courses = await Course
+    .find({})
+    .sort('name')
+    .populate('coordinator')
+  res.json(courses)
 })
 
-coursesRouter.get('/:id', async (request, response) => {
-  const course = await Course.findById(request.params.id).populate('coordinator')
+coursesRouter.get('/:id', async (req, res) => {
+  const course = await Course.findById(req.params.id).populate('coordinator')
   if (course) {
-    response.json(course)
+    res.json(course)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-coursesRouter.get('/:id/exams', async (request, response) => {
-  const course = await Course.findById(request.params.id)
+coursesRouter.get('/:id/students', async (req, res) => {
+  const course = await Course.findById(req.params.id)
   if (course) {
-    const exams = await Exam.find({ _id: { $in: course.exams } }).populate('course')
-    response.json(exams)
+    const students = await User.find({ _id: { $in: course.studentsEnrolled } })
+    res.json(students)
   } else {
-    response.status(404).end()
+    res.status(404).end()
   }
 })
 
-coursesRouter.get('/:id/upcoming-exams', async (request, response) => {
-  const course = await Course.findById(request.params.id)
+coursesRouter.get('/:id/progress/:user', async (req, res) => {
+  const { id, user } = req.params
+
+  const course = await Course.findById(id)
 
   if (!course) {
-    response.status(404).end()
+    res.status(404).end()
     return
   }
 
-  const exams = await Exam.find({ _id: { $in: course.exams } })
-  const events = await helper.getEvents(exams)
+  const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
+    exam: {
+      $in: course.exams
+    },
+    user
+  })
 
-  response.json(events)
+  const percentage = uniqueExamsTakenByUser.length === 0
+    ? 0
+    : Math.floor(uniqueExamsTakenByUser.length / course.exams.length * 100)
+
+  res.json({ percentage })
 })
 
-coursesRouter.put('/:courseId', async (request, response): Promise<Response | void> => {
-  const body = request.body
-  const course = await Course.findById(request.params.courseId)
+coursesRouter.get('/:id/exams', async (req, res) => {
+  const exams = await Exam.find({ course: req.params.id }).populate('course')
+  res.json(exams)
+})
+
+coursesRouter.get('/:id/grades/:user', async (req, res) => {
+  const { id, user } = req.params
+
+  const examsInCourse = await Exam.find({ course: id })
+
+  const course = await Course.findById(id)
+
+  if (!course) {
+    res.status(404).end()
+    return
+  }
+
+  const grades: CourseGrades = {
+    courseId: course._id,
+    courseName: course.name,
+    exams: [],
+    courseTotal: 0
+  }
+
+  // TODO: allow custom weight
+  const weight = 1 / examsInCourse.length
+  for (const exam of examsInCourse) {
+    const examAttempts = await ExamAttempt.find({ exam: exam.id, user })
+
+    const highestScore = examAttempts.reduce((a, b) => {
+      return Math.max(a, b.score)
+    }, 0)
+
+    grades.exams.push({
+      weight,
+      label: exam.label,
+      id: exam.id,
+      weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
+      grade: Math.floor(highestScore / exam.examItems.length * 100)
+    })
+  }
+
+  grades.courseTotal = Math.round(
+    grades.exams
+      .map(exam => exam.grade * weight)
+      .reduce((a, b) => a + b, 0)
+  )
+
+  res.json(grades)
+})
+
+coursesRouter.get('/:course/exams/week/:week', async (req, res) => {
+  const { course, week } = req.params
+  const exams = await Exam.find({ course, week: Number(week) }).populate('course')
+  res.json(exams)
+})
+
+coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
+  const exams = await Exam
+    .find({
+      course: req.params.id,
+      startDate: {
+        $gt: new Date()
+      }
+    })
+    .sort('startDate')
+    .populate('course')
+
+  res.json(exams)
+})
+
+coursesRouter.put('/:courseId', async (req, res) => {
+  const body = req.body
+  const course = await Course.findById(req.params.courseId)
 
   // Course doesn't exist
   if (!course) {
-    return response.status(404).end()
+    res.status(404).end()
+    return
   }
 
-  // If request contains a userId, it's a request for enrollment for one student
+  // If req contains a userId, it's a req for enrollment for one student
   const userId = body.userId
   if (userId) {
     const user = await User.findById(userId)
 
     if (!user) {
-      return response.status(401).json({
+      res.status(401).json({
         error: 'User not found.'
       })
+      return
     }
 
     if (user.role !== 'student') {
-      return response.status(401).json({
+      res.status(401).json({
         error: 'User is not a student.'
       })
+      return
     }
 
     if (user.courses.includes(course.id)) {
-      return response.status(401).json({
+      res.status(401).json({
         error: 'Student is already enrolled in course.'
       })
+      return
     }
 
     user.courses.push(course._id)
@@ -124,18 +195,20 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
 
     course.studentsEnrolled.push(user._id)
     const updatedCourse = await course.save()
-    return response.json(await updatedCourse.populate('coordinator').execPopulate())
+    res.json(await updatedCourse.populate('coordinator').execPopulate())
+    return
   }
 
-  // If request contains a userIds, it's a request for enrollment for single/multiple student(s)
+  // If req contains a userIds, it's a req for enrollment for single/multiple student(s)
   const userIds = body.userIds
   if (userIds) {
     const users = await User.find({ _id: { $in: userIds }, role: 'student' })
 
     if (!users) {
-      return response.status(401).json({
+      res.status(401).json({
         error: 'Users not found.'
       })
+      return
     }
 
     const promiseArray = users.map(user => {
@@ -146,13 +219,33 @@ coursesRouter.put('/:courseId', async (request, response): Promise<Response | vo
     await Promise.all(promiseArray)
 
     const updatedCourse = await course.save()
-    return response.json(await updatedCourse.populate('coordinator').execPopulate())
+    res.json(await updatedCourse.populate('coordinator').execPopulate())
   }
 })
 
-coursesRouter.delete('/:id', async (request, response) => {
-  await Course.findByIdAndDelete(request.params.id)
-  response.status(204).end()
+coursesRouter.delete('/:id', async (req, res) => {
+  await Course.findByIdAndDelete(req.params.id)
+  res.status(204).end()
+})
+
+coursesRouter.delete('/:courseId/students/:studentId', async (req, res) => {
+  await Course.update({
+    _id: req.params.courseId
+  },
+  {
+    $pull: {
+      studentsEnrolled: req.params.studentId
+    }
+  })
+  await User.update({
+    _id: req.params.studentId
+  },
+  {
+    $pull: {
+      courses: req.params.courseId
+    }
+  })
+  res.status(204).end()
 })
 
 export default coursesRouter
