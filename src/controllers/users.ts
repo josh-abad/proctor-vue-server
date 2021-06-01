@@ -50,17 +50,17 @@ usersRouter.post('/', async (req, res) => {
 })
 
 usersRouter.get('/', async (_req, res) => {
-  const users = await User.find({}).sort('name.last')
+  const users = await User.find({}).populate('courses').sort('name.last')
   res.json(users)
 })
 
 usersRouter.get('/students', async (_req, res) => {
-  const students = await User.find({ role: 'student' }).sort('name.last')
+  const students = await User.find({ role: 'student' }).populate('courses').sort('name.last')
   res.json(students)
 })
 
 usersRouter.get('/students/:id', async (req, res) => {
-  const user = await User.findOne({ role: 'student', _id: req.params.id })
+  const user = await User.findOne({ role: 'student', _id: req.params.id }).populate('courses')
   if (user) {
     res.json(user)
   } else {
@@ -69,12 +69,12 @@ usersRouter.get('/students/:id', async (req, res) => {
 })
 
 usersRouter.get('/coordinators', async (_req, res) => {
-  const coordinators = await User.find({ role: 'coordinator' }).sort('name.last')
+  const coordinators = await User.find({ role: 'coordinator' }).populate('courses').sort('name.last')
   res.json(coordinators)
 })
 
 usersRouter.get('/:id', async (req, res) => {
-  const user = await User.findById(req.params.id)
+  const user = await User.findById(req.params.id).populate('courses')
   if (user) {
     res.json(user)
   } else {
@@ -104,7 +104,7 @@ usersRouter.get('/:id/attempts', async (req, res) => {
 usersRouter.put('/:id', async (req, res) => {
   const body = req.body
 
-  const oldUser = await User.findById(req.params.id)
+  const oldUser = await User.findById(req.params.id).populate('courses')
   if (oldUser) {
     oldUser.name = body.name || oldUser.name
     oldUser.courses = body.courses || oldUser.courses
@@ -255,7 +255,7 @@ usersRouter.post('/:id/reference-image', upload.single('image'), async (req, res
   const filename = (req.file as Express.MulterS3.File).key
   const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
 
-  const updatedUser = await User.findByIdAndUpdate(req.params.id, { referenceImageUrl }, { new: true })
+  const updatedUser = await User.findByIdAndUpdate(req.params.id, { referenceImageUrl }, { new: true }).populate('courses')
   res.json(updatedUser)
 })
 

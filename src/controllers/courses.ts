@@ -52,7 +52,7 @@ coursesRouter.get('/:id', async (req, res) => {
 coursesRouter.get('/:id/students', async (req, res) => {
   const course = await Course.findById(req.params.id)
   if (course) {
-    const students = await User.find({ _id: { $in: course.studentsEnrolled } })
+    const students = await User.find({ _id: { $in: course.studentsEnrolled } }).populate('courses')
     res.json(students)
   } else {
     res.status(404).end()

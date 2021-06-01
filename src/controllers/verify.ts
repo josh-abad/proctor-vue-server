@@ -23,7 +23,7 @@ verifyRouter.post('/', authenticate, async (req, res) => {
   user.verified = true
 
   const savedUser = await user.save()
-  res.json(savedUser.toJSON())
+  res.json(savedUser.populate('courses').toJSON())
 })
 
 export default verifyRouter

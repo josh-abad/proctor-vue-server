@@ -9,7 +9,7 @@ const loginRouter = Router()
 loginRouter.post('/', async (req, res) => {
   const body = req.body
 
-  const user = await User.findOne({ email: body.email }).select('+passwordHash')
+  const user = await User.findOne({ email: body.email }).populate('courses').select('+passwordHash')
   const passwordCorrect = user === null
     ? false
     : await bcrypt.compare(body.password, user.passwordHash ?? '')
