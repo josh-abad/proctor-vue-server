@@ -1,14 +1,14 @@
 import { Schema, Document, model } from 'mongoose'
 
 export interface Score {
-  question: string,
+  question: string
   points: number
 }
 
 export interface ExamResultDocument extends Document {
-  exam: string,
-  user: string,
-  scores: Score[],
+  exam: string
+  user: string
+  scores: Score[]
   attempt: string
 }
 

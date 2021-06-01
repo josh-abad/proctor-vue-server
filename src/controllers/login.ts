@@ -9,10 +9,13 @@ const loginRouter = Router()
 loginRouter.post('/', async (req, res) => {
   const body = req.body
 
-  const user = await User.findOne({ email: body.email }).populate('courses').select('+passwordHash')
-  const passwordCorrect = user === null
-    ? false
-    : await bcrypt.compare(body.password, user.passwordHash ?? '')
+  const user = await User.findOne({ email: body.email })
+    .populate('courses')
+    .select('+passwordHash')
+  const passwordCorrect =
+    user === null
+      ? false
+      : await bcrypt.compare(body.password, user.passwordHash ?? '')
 
   if (!(user && passwordCorrect)) {
     res.status(401).json({
@@ -27,7 +30,9 @@ loginRouter.post('/', async (req, res) => {
     role: user.role
   }
 
-  const token = jwt.sign(userForToken, config.SECRET as string, { expiresIn: '14 days' })
+  const token = jwt.sign(userForToken, config.SECRET as string, {
+    expiresIn: '14 days'
+  })
   const userCopy = { ...user.toJSON() }
   delete userCopy.passwordHash
 

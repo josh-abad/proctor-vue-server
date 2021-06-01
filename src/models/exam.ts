@@ -4,9 +4,9 @@ import ExamAttempt from './exam-attempt'
 import ExamResult from './exam-result'
 
 interface ExamItem {
-  question: string,
-  choices: string[],
-  answer: string[],
+  question: string
+  choices: string[]
+  answer: string[]
   questionType: 'text' | 'multiple choice' | 'multiple answers'
 }
 
@@ -15,15 +15,19 @@ const examItemSchema = new Schema({
     type: String,
     required: true
   },
-  choices: [{
-    type: String,
-    required: false,
-    default: []
-  }],
-  answer: [{
-    type: String,
-    required: true
-  }],
+  choices: [
+    {
+      type: String,
+      required: false,
+      default: []
+    }
+  ],
+  answer: [
+    {
+      type: String,
+      required: true
+    }
+  ],
   questionType: {
     type: String,
     required: true
@@ -31,15 +35,15 @@ const examItemSchema = new Schema({
 })
 
 export interface ExamDocument extends Document {
-  label: string,
-  examItems: ExamItem[],
-  length: number,
-  duration: number,
-  random: boolean,
-  course: string,
-  maxAttempts: number,
-  week: number,
-  startDate: Date,
+  label: string
+  examItems: ExamItem[]
+  length: number
+  duration: number
+  random: boolean
+  course: string
+  maxAttempts: number
+  week: number
+  startDate: Date
   endDate: Date
 }
 
@@ -85,8 +89,8 @@ const examSchema = new Schema({
 })
 
 examSchema.post('findOneAndDelete', async (exam: ExamDocument) => {
-  await Promise.all([ 
-    Course.updateOne({ _id: exam.course }, { $pull: { exams: exam._id }}),
+  await Promise.all([
+    Course.updateOne({ _id: exam.course }, { $pull: { exams: exam._id } }),
     ExamAttempt.deleteMany({ exam: exam._id }),
     ExamResult.deleteMany({ exam: exam._id })
   ])

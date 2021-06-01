@@ -14,7 +14,13 @@ examResultsRouter.post('/', async (req, res) => {
   const body = req.body
   const token = helper.getTokenFrom(req)
   const decodedToken = jwt.verify(token as string, config.SECRET as string)
-  if (!token || !((decodedToken as AttemptToken).attemptId && (decodedToken as AttemptToken).userId)) {
+  if (
+    !token ||
+    !(
+      (decodedToken as AttemptToken).attemptId &&
+      (decodedToken as AttemptToken).userId
+    )
+  ) {
     res.status(401).json({ error: 'token missing or invalid' })
     return
   }
@@ -28,9 +34,12 @@ examResultsRouter.post('/', async (req, res) => {
     let points = 0
     if (examItem) {
       if (examItem && examItem.questionType !== 'multiple answers') {
-        points = examItem.answer[0] === answer.answer ? 1 : 0 
+        points = examItem.answer[0] === answer.answer ? 1 : 0
       } else {
-        points = examItem.answer.reduce((_a, b) => (answer.answer as string[]).includes(b) ? 1 : 0, 0)
+        points = examItem.answer.reduce(
+          (_a, b) => ((answer.answer as string[]).includes(b) ? 1 : 0),
+          0
+        )
       }
     }
     scores.push({
@@ -40,8 +49,10 @@ examResultsRouter.post('/', async (req, res) => {
   }
 
   const user = await User.findById((decodedToken as AttemptToken).userId)
-  const attempt = await ExamAttempt.findById((decodedToken as AttemptToken).attemptId).populate({ path: 'exam', populate: { path: 'course' } })
-  
+  const attempt = await ExamAttempt.findById(
+    (decodedToken as AttemptToken).attemptId
+  ).populate({ path: 'exam', populate: { path: 'course' } })
+
   const examResult = new ExamResult({
     scores,
     user: user?._id,

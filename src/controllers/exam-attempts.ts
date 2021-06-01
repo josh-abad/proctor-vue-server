@@ -15,16 +15,19 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
 
   if (!(exam && user)) {
     res.status(401).json({
-      'error': 'invalid user or exam'
+      error: 'invalid user or exam'
     })
     return
   }
 
-  const pastAttempts = await ExamAttempt.countDocuments({ user: user._id, exam: exam._id })
+  const pastAttempts = await ExamAttempt.countDocuments({
+    user: user._id,
+    exam: exam._id
+  })
 
   if (pastAttempts >= exam.maxAttempts) {
     res.status(401).json({
-      'error': 'max attempts reached'
+      error: 'max attempts reached'
     })
     return
   }
@@ -50,16 +53,27 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
 
   const attemptToken = jwt.sign(attemptForToken, config.SECRET as string)
 
-  res.json({ token: attemptToken, attempt: await savedExamAttempt.populate({ path: 'exam', populate: { path: 'course' } }).execPopulate() })
+  res.json({
+    token: attemptToken,
+    attempt: await savedExamAttempt
+      .populate({ path: 'exam', populate: { path: 'course' } })
+      .execPopulate()
+  })
 })
 
 examAttemptsRouter.get('/', async (_req, res) => {
-  const examAttempts = await ExamAttempt.find({}).populate({ path: 'exam', populate: { path: 'course' } })
+  const examAttempts = await ExamAttempt.find({}).populate({
+    path: 'exam',
+    populate: { path: 'course' }
+  })
   res.json(examAttempts)
 })
 
 examAttemptsRouter.get('/:id', async (req, res) => {
-  const examAttempt = await ExamAttempt.findById(req.params.id).populate({ path: 'exam', populate: { path: 'course' } })
+  const examAttempt = await ExamAttempt.findById(req.params.id).populate({
+    path: 'exam',
+    populate: { path: 'course' }
+  })
   if (examAttempt) {
     res.json(examAttempt)
   } else {
@@ -76,11 +90,15 @@ examAttemptsRouter.put('/:id', async (req, res) => {
     courseId: body.courseId
   }
 
-  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(req.params.id, examAttempt, {
-    new: true,
-    runValidators: true,
-    context: 'query'
-  })
+  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(
+    req.params.id,
+    examAttempt,
+    {
+      new: true,
+      runValidators: true,
+      context: 'query'
+    }
+  )
   res.json(updatedExamItem)
 })
 

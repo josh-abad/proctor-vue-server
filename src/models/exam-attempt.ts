@@ -1,14 +1,14 @@
 import { Schema, Document, model } from 'mongoose'
 
 export interface ExamAttemptDocument extends Document {
-  exam: string,
-  user: string,
-  status: 'in-progress' | 'completed',
-  startDate: Date,
-  endDate: Date,
-  submittedDate: Date,
-  examResult: string,
-  score: number,
+  exam: string
+  user: string
+  status: 'in-progress' | 'completed'
+  startDate: Date
+  endDate: Date
+  submittedDate: Date
+  examResult: string
+  score: number
   examTotal: number
 }
 

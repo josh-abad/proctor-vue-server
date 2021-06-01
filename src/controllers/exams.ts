@@ -14,21 +14,21 @@ examsRouter.post('/', authenticate, async (req, res) => {
 
   if (!(course && user)) {
     res.status(401).json({
-      'error': 'invalid user or course'
+      error: 'invalid user or course'
     })
     return
   }
 
   if (user.role === 'student') {
     res.status(401).json({
-      'error': 'role does not permit creation of new exams'
+      error: 'role does not permit creation of new exams'
     })
     return
   }
 
   if (user.role !== 'admin' && user.id !== course.coordinator.toString()) {
     res.status(401).json({
-      'error': 'coordinator not assigned to course'
+      error: 'coordinator not assigned to course'
     })
     return
   }
@@ -42,7 +42,7 @@ examsRouter.post('/', authenticate, async (req, res) => {
     course: course?._id,
     maxAttempts: body.maxAttempts,
     week: body.week,
-    startDate: body.startDate, 
+    startDate: body.startDate,
     endDate: body.endDate
   } as ExamDocument)
 

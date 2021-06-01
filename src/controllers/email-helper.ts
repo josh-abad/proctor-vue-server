@@ -7,13 +7,17 @@ import config from '@/utils/config'
 
 const createEmailTransporter = async (): Promise<Mail> => {
   const OAuth2 = google.auth.OAuth2
-  const ouath2Client = new OAuth2(config.GOOGLE_CLIENT_ID, config.GOOGLE_CLIENT_SECRET, 'https://developers.google.com/oauthplayground')
+  const ouath2Client = new OAuth2(
+    config.GOOGLE_CLIENT_ID,
+    config.GOOGLE_CLIENT_SECRET,
+    'https://developers.google.com/oauthplayground'
+  )
   ouath2Client.setCredentials({
     refresh_token: config.GOOGLE_REFRESH_TOKEN
   })
   const accessToken = await ouath2Client.getAccessToken()
 
-  return  nodemailer.createTransport({
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       type: 'OAuth2',
@@ -26,7 +30,10 @@ const createEmailTransporter = async (): Promise<Mail> => {
   } as SMTPTransport.Options)
 }
 
-export const sendVerificationEmail = async (to: string, token: string): Promise<void> => {
+export const sendVerificationEmail = async (
+  to: string,
+  token: string
+): Promise<void> => {
   const transporter = await createEmailTransporter()
   const mailOptions: Mail.Options = {
     to,
