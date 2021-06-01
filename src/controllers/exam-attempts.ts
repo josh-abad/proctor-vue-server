@@ -20,6 +20,17 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
     return
   }
 
+  const hasInProgressAttempt = await ExamAttempt.exists({
+    user: user._id,
+    status: 'in-progress'
+  })
+  if (hasInProgressAttempt) {
+    res.status(401).json({
+      error: 'attempt currently in-progress'
+    })
+    return
+  }
+
   const pastAttempts = await ExamAttempt.countDocuments({
     user: user._id,
     exam: exam._id
