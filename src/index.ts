@@ -1,4 +1,7 @@
-import 'module-alias/register'
+import moduleAlias from 'module-alias'
+
+moduleAlias.addAlias('@', __dirname)
+
 import app from '@/app'
 import http from 'http'
 import config from '@/utils/config'
