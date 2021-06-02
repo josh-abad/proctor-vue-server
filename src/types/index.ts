@@ -1,5 +1,7 @@
 export type Role = 'student' | 'coordinator' | 'admin'
 
+export type AttemptStatus = 'in-progress' | 'completed' | 'expired'
+
 export interface Event {
   location: string
   locationUrl: string

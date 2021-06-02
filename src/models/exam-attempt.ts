@@ -1,9 +1,10 @@
+import { AttemptStatus } from '@/types'
 import { Schema, Document, model } from 'mongoose'
 
 export interface ExamAttemptDocument extends Document {
   exam: string
   user: string
-  status: 'in-progress' | 'completed' | 'expired'
+  status: AttemptStatus
   startDate: Date
   endDate: Date
   submittedDate: Date

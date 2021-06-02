@@ -2,6 +2,7 @@ import { Router } from 'express'
 import Exam from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
 import { authenticate } from '@/utils/middleware'
+import { AttemptStatus } from '@/types'
 
 const examAttemptsRouter = Router()
 
@@ -72,6 +73,36 @@ examAttemptsRouter.get('/', async (_req, res) => {
 })
 
 examAttemptsRouter.get('/:id', async (req, res) => {
+  const status = req.query.status
+
+  if (status !== undefined) {
+    const isAttemptStatus = (x: unknown): x is AttemptStatus => {
+      return (
+        typeof x === 'string' &&
+        ['in-progress', 'completed', 'expired'].includes(x)
+      )
+    }
+
+    if (isAttemptStatus(status)) {
+      const examAttemptByStatus = await ExamAttempt.findOne({
+        _id: req.params.id,
+        status
+      }).populate({
+        path: 'exam',
+        populate: { path: 'course' }
+      })
+      if (examAttemptByStatus) {
+        res.json(examAttemptByStatus)
+      } else {
+        res.status(404).end()
+      }
+      return
+    } else {
+      res.sendStatus(400)
+      return
+    }
+  }
+
   const examAttempt = await ExamAttempt.findById(req.params.id).populate({
     path: 'exam',
     populate: { path: 'course' }
