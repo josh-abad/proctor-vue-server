@@ -60,7 +60,7 @@ examsRouter.get('/', async (_req, res) => {
 })
 
 examsRouter.get('/:id', async (req, res) => {
-  const exam = await Exam.findById(req.params.id)
+  const exam = await Exam.findById(req.params.id).populate('course')
   if (exam) {
     res.json(exam)
   } else {
