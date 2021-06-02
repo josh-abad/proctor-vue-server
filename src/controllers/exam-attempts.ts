@@ -1,8 +1,6 @@
 import { Router } from 'express'
 import Exam from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
-import config from '@/utils/config'
-import jwt from 'jsonwebtoken'
 import { authenticate } from '@/utils/middleware'
 
 const examAttemptsRouter = Router()
@@ -57,19 +55,12 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
   })
 
   const savedExamAttempt = await examAttempt.save()
-  const attemptForToken = {
-    userId: user?._id,
-    attemptId: savedExamAttempt._id
-  }
 
-  const attemptToken = jwt.sign(attemptForToken, config.SECRET as string)
-
-  res.json({
-    token: attemptToken,
-    attempt: await savedExamAttempt
+  res.json(
+    await savedExamAttempt
       .populate({ path: 'exam', populate: { path: 'course' } })
       .execPopulate()
-  })
+  )
 })
 
 examAttemptsRouter.get('/', async (_req, res) => {

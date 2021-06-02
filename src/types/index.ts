@@ -16,11 +16,6 @@ export interface UserToken {
   id: string
 }
 
-export interface AttemptToken {
-  attemptId: string
-  userId: string
-}
-
 export interface CourseGrades {
   courseName: string
   courseId: string
