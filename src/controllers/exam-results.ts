@@ -49,7 +49,7 @@ examResultsRouter.post('/', authenticate, async (req, res) => {
   if (attempt) {
     attempt.examResult = examResult._id
     attempt.status = 'completed'
-    attempt.submittedDate = body.submittedDate || new Date()
+    attempt.submittedDate = new Date()
     attempt.score = scores.reduce((x: number, y: Score) => x + y.points, 0)
   }
 
