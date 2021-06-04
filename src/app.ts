@@ -3,6 +3,7 @@ import 'express-async-errors'
 import cors from 'cors'
 import mongoosee from 'mongoose'
 import config from '@/utils/config'
+import userRouter from '@/controllers/user'
 import usersRouter from '@/controllers/users'
 import coursesRouter from '@/controllers/courses'
 import examsRouter from '@/controllers/exams'
@@ -49,6 +50,7 @@ app.use(
   })
 )
 
+app.use('/user', userRouter)
 app.use('/users', usersRouter)
 app.use('/courses', coursesRouter)
 app.use('/exams', examsRouter)
