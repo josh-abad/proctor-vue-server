@@ -33,15 +33,14 @@ coursesRouter.post('/', async (req, res) => {
 })
 
 coursesRouter.get('/', async (_req, res) => {
-  const courses = await Course
-    .find({})
-    .sort('name')
-    .populate('coordinator')
+  const courses = await Course.find({}).sort('name').populate('coordinator')
   res.json(courses)
 })
 
 coursesRouter.get('/:id', async (req, res) => {
-  const course = await Course.findById(req.params.id).populate('coordinator')
+  const course = await Course.findById(req.params.id)
+    .populate('coordinator')
+    .populate('exams')
   if (course) {
     res.json(course)
   } else {
@@ -52,7 +51,9 @@ coursesRouter.get('/:id', async (req, res) => {
 coursesRouter.get('/:id/students', async (req, res) => {
   const course = await Course.findById(req.params.id)
   if (course) {
-    const students = await User.find({ _id: { $in: course.studentsEnrolled } })
+    const students = await User.find({
+      _id: { $in: course.studentsEnrolled }
+    }).populate('courses')
     res.json(students)
   } else {
     res.status(404).end()
@@ -76,9 +77,10 @@ coursesRouter.get('/:id/progress/:user', async (req, res) => {
     user
   })
 
-  const percentage = uniqueExamsTakenByUser.length === 0
-    ? 0
-    : Math.floor(uniqueExamsTakenByUser.length / course.exams.length * 100)
+  const percentage =
+    uniqueExamsTakenByUser.length === 0
+      ? 0
+      : Math.floor((uniqueExamsTakenByUser.length / course.exams.length) * 100)
 
   res.json({ percentage })
 })
@@ -136,18 +138,19 @@ coursesRouter.get('/:id/grades/:user', async (req, res) => {
 
 coursesRouter.get('/:course/exams/week/:week', async (req, res) => {
   const { course, week } = req.params
-  const exams = await Exam.find({ course, week: Number(week) }).populate('course')
+  const exams = await Exam.find({ course, week: Number(week) }).populate(
+    'course'
+  )
   res.json(exams)
 })
 
 coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
-  const exams = await Exam
-    .find({
-      course: req.params.id,
-      startDate: {
-        $gt: new Date()
-      }
-    })
+  const exams = await Exam.find({
+    course: req.params.id,
+    startDate: {
+      $gt: new Date()
+    }
+  })
     .sort('startDate')
     .populate('course')
 
@@ -229,22 +232,26 @@ coursesRouter.delete('/:id', async (req, res) => {
 })
 
 coursesRouter.delete('/:courseId/students/:studentId', async (req, res) => {
-  await Course.update({
-    _id: req.params.courseId
-  },
-  {
-    $pull: {
-      studentsEnrolled: req.params.studentId
+  await Course.update(
+    {
+      _id: req.params.courseId
+    },
+    {
+      $pull: {
+        studentsEnrolled: req.params.studentId
+      }
     }
-  })
-  await User.update({
-    _id: req.params.studentId
-  },
-  {
-    $pull: {
-      courses: req.params.courseId
+  )
+  await User.update(
+    {
+      _id: req.params.studentId
+    },
+    {
+      $pull: {
+        courses: req.params.courseId
+      }
     }
-  })
+  )
   res.status(204).end()
 })
 

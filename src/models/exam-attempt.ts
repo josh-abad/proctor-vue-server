@@ -1,14 +1,15 @@
+import { AttemptStatus } from '@/types'
 import { Schema, Document, model } from 'mongoose'
 
 export interface ExamAttemptDocument extends Document {
-  exam: string,
-  user: string,
-  status: 'in-progress' | 'completed',
-  startDate: Date,
-  endDate: Date,
-  submittedDate: Date,
-  examResult: string,
-  score: number,
+  exam: string
+  user: string
+  status: AttemptStatus
+  startDate: Date
+  endDate: Date
+  submittedDate: Date
+  examResult: string
+  score: number
   examTotal: number
 }
 
@@ -52,6 +53,25 @@ const examAttemptSchema = new Schema({
   }
 })
 
+examAttemptSchema.pre(/^find.*/, next => {
+  ExamAttempt.updateMany(
+    {
+      status: 'in-progress',
+      endDate: {
+        $lt: new Date()
+      }
+    },
+    {
+      status: 'expired'
+    },
+    {
+      new: true
+    }
+  ).then(() => {
+    next()
+  })
+})
+
 examAttemptSchema.set('toJSON', {
   transform: (_document: Document, returnedObject: ExamAttemptDocument) => {
     returnedObject.id = returnedObject._id
@@ -60,4 +80,5 @@ examAttemptSchema.set('toJSON', {
   }
 })
 
-export default model<ExamAttemptDocument>('ExamAttempt', examAttemptSchema)
+const ExamAttempt = model<ExamAttemptDocument>('ExamAttempt', examAttemptSchema)
+export default ExamAttempt

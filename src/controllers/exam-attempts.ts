@@ -1,9 +1,8 @@
 import { Router } from 'express'
 import Exam from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
-import config from '@/utils/config'
-import jwt from 'jsonwebtoken'
 import { authenticate } from '@/utils/middleware'
+import { AttemptStatus } from '@/types'
 
 const examAttemptsRouter = Router()
 
@@ -15,16 +14,30 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
 
   if (!(exam && user)) {
     res.status(401).json({
-      'error': 'invalid user or exam'
+      error: 'invalid user or exam'
     })
     return
   }
 
-  const pastAttempts = await ExamAttempt.countDocuments({ user: user._id, exam: exam._id })
+  const hasInProgressAttempt = await ExamAttempt.exists({
+    user: user._id,
+    status: 'in-progress'
+  })
+  if (hasInProgressAttempt) {
+    res.status(401).json({
+      error: 'attempt currently in-progress'
+    })
+    return
+  }
+
+  const pastAttempts = await ExamAttempt.countDocuments({
+    user: user._id,
+    exam: exam._id
+  })
 
   if (pastAttempts >= exam.maxAttempts) {
     res.status(401).json({
-      'error': 'max attempts reached'
+      error: 'max attempts reached'
     })
     return
   }
@@ -43,23 +56,57 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
   })
 
   const savedExamAttempt = await examAttempt.save()
-  const attemptForToken = {
-    userId: user?._id,
-    attemptId: savedExamAttempt._id
-  }
 
-  const attemptToken = jwt.sign(attemptForToken, config.SECRET as string)
-
-  res.json({ token: attemptToken, attempt: await savedExamAttempt.populate({ path: 'exam', populate: { path: 'course' } }).execPopulate() })
+  res.json(
+    await savedExamAttempt
+      .populate({ path: 'exam', populate: { path: 'course' } })
+      .execPopulate()
+  )
 })
 
 examAttemptsRouter.get('/', async (_req, res) => {
-  const examAttempts = await ExamAttempt.find({}).populate({ path: 'exam', populate: { path: 'course' } })
+  const examAttempts = await ExamAttempt.find({}).populate({
+    path: 'exam',
+    populate: { path: 'course' }
+  })
   res.json(examAttempts)
 })
 
 examAttemptsRouter.get('/:id', async (req, res) => {
-  const examAttempt = await ExamAttempt.findById(req.params.id).populate({ path: 'exam', populate: { path: 'course' } })
+  const status = req.query.status
+
+  if (status !== undefined) {
+    const isAttemptStatus = (x: unknown): x is AttemptStatus => {
+      return (
+        typeof x === 'string' &&
+        ['in-progress', 'completed', 'expired'].includes(x)
+      )
+    }
+
+    if (isAttemptStatus(status)) {
+      const examAttemptByStatus = await ExamAttempt.findOne({
+        _id: req.params.id,
+        status
+      }).populate({
+        path: 'exam',
+        populate: { path: 'course' }
+      })
+      if (examAttemptByStatus) {
+        res.json(examAttemptByStatus)
+      } else {
+        res.status(404).end()
+      }
+      return
+    } else {
+      res.sendStatus(400)
+      return
+    }
+  }
+
+  const examAttempt = await ExamAttempt.findById(req.params.id).populate({
+    path: 'exam',
+    populate: { path: 'course' }
+  })
   if (examAttempt) {
     res.json(examAttempt)
   } else {
@@ -76,11 +123,15 @@ examAttemptsRouter.put('/:id', async (req, res) => {
     courseId: body.courseId
   }
 
-  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(req.params.id, examAttempt, {
-    new: true,
-    runValidators: true,
-    context: 'query'
-  })
+  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(
+    req.params.id,
+    examAttempt,
+    {
+      new: true,
+      runValidators: true,
+      context: 'query'
+    }
+  )
   res.json(updatedExamItem)
 })
 

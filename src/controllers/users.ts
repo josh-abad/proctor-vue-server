@@ -32,7 +32,9 @@ usersRouter.post('/', async (req, res) => {
     role: body.role || 'student',
     email: body.email,
     verified: false,
-    avatarUrl: `https://gravatar.com/avatar/${md5(body.email.trim())}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
+    avatarUrl: `https://gravatar.com/avatar/${md5(
+      body.email.trim()
+    )}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
     passwordHash
   })
 
@@ -41,7 +43,9 @@ usersRouter.post('/', async (req, res) => {
     return
   }
 
-  const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, { expiresIn: '1h' })
+  const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, {
+    expiresIn: '1h'
+  })
 
   sendVerificationEmail(user.email, token)
 
@@ -50,17 +54,22 @@ usersRouter.post('/', async (req, res) => {
 })
 
 usersRouter.get('/', async (_req, res) => {
-  const users = await User.find({}).sort('name.last')
+  const users = await User.find({}).populate('courses').sort('name.last')
   res.json(users)
 })
 
 usersRouter.get('/students', async (_req, res) => {
-  const students = await User.find({ role: 'student' }).sort('name.last')
+  const students = await User.find({ role: 'student' })
+    .populate('courses')
+    .sort('name.last')
   res.json(students)
 })
 
 usersRouter.get('/students/:id', async (req, res) => {
-  const user = await User.findOne({ role: 'student', _id: req.params.id })
+  const user = await User.findOne({
+    role: 'student',
+    _id: req.params.id
+  }).populate('courses')
   if (user) {
     res.json(user)
   } else {
@@ -69,12 +78,14 @@ usersRouter.get('/students/:id', async (req, res) => {
 })
 
 usersRouter.get('/coordinators', async (_req, res) => {
-  const coordinators = await User.find({ role: 'coordinator' }).sort('name.last')
+  const coordinators = await User.find({ role: 'coordinator' })
+    .populate('courses')
+    .sort('name.last')
   res.json(coordinators)
 })
 
 usersRouter.get('/:id', async (req, res) => {
-  const user = await User.findById(req.params.id)
+  const user = await User.findById(req.params.id).populate('courses')
   if (user) {
     res.json(user)
   } else {
@@ -85,9 +96,9 @@ usersRouter.get('/:id', async (req, res) => {
 usersRouter.get('/:id/courses', async (req, res) => {
   const user = await User.findById(req.params.id)
   if (user) {
-    const courses = await Course
-      .find({ _id: { $in: user.courses } })
-      .sort('name')
+    const courses = await Course.find({ _id: { $in: user.courses } }).sort(
+      'name'
+    )
     res.json(courses)
   } else {
     res.status(404).end()
@@ -104,7 +115,7 @@ usersRouter.get('/:id/attempts', async (req, res) => {
 usersRouter.put('/:id', async (req, res) => {
   const body = req.body
 
-  const oldUser = await User.findById(req.params.id)
+  const oldUser = await User.findById(req.params.id).populate('courses')
   if (oldUser) {
     oldUser.name = body.name || oldUser.name
     oldUser.courses = body.courses || oldUser.courses
@@ -137,7 +148,9 @@ usersRouter.put('/:id/recent-courses', async (req, res) => {
     }
 
     if (user.recentCourses.includes(body.courseId)) {
-      user.recentCourses = user.recentCourses.filter(id => id.toString() !== body.courseId)
+      user.recentCourses = user.recentCourses.filter(
+        id => id.toString() !== body.courseId
+      )
     }
 
     user.recentCourses.push(body.courseId)
@@ -159,15 +172,14 @@ usersRouter.get('/:id/upcoming-exams', async (req, res) => {
     return
   }
 
-  const exams = await Exam
-    .find({
-      course: {
-        $in: user.courses
-      },
-      startDate: {
-        $gt: new Date()
-      }
-    })
+  const exams = await Exam.find({
+    course: {
+      $in: user.courses
+    },
+    startDate: {
+      $gt: new Date()
+    }
+  })
     .sort('startDate')
     .populate('course')
 
@@ -182,18 +194,17 @@ usersRouter.get('/:id/open-exams', async (req, res) => {
     return
   }
 
-  const exams = await Exam
-    .find({
-      course: {
-        $in: user.courses
-      },
-      startDate: {
-        $lte: new Date()
-      },
-      endDate: {
-        $gte: new Date()
-      }
-    })
+  const exams = await Exam.find({
+    course: {
+      $in: user.courses
+    },
+    startDate: {
+      $lte: new Date()
+    },
+    endDate: {
+      $gte: new Date()
+    }
+  })
     .sort('endDate')
     .populate('course')
 
@@ -251,12 +262,20 @@ usersRouter.get('/:id/recent-activity', async (req, res) => {
   res.json(events)
 })
 
-usersRouter.post('/:id/reference-image', upload.single('image'), async (req, res) => {
-  const filename = (req.file as Express.MulterS3.File).key
-  const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
+usersRouter.post(
+  '/:id/reference-image',
+  upload.single('image'),
+  async (req, res) => {
+    const filename = (req.file as Express.MulterS3.File).key
+    const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
 
-  const updatedUser = await User.findByIdAndUpdate(req.params.id, { referenceImageUrl }, { new: true })
-  res.json(updatedUser)
-})
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { referenceImageUrl },
+      { new: true }
+    ).populate('courses')
+    res.json(updatedUser)
+  }
+)
 
 export default usersRouter

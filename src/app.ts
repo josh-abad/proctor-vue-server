@@ -3,6 +3,7 @@ import 'express-async-errors'
 import cors from 'cors'
 import mongoosee from 'mongoose'
 import config from '@/utils/config'
+import userRouter from '@/controllers/user'
 import usersRouter from '@/controllers/users'
 import coursesRouter from '@/controllers/courses'
 import examsRouter from '@/controllers/exams'
@@ -16,18 +17,21 @@ import verifyRouter from '@/controllers/verify'
 import morgan from 'morgan'
 import helmet from 'helmet'
 
-logger.info('Connecting to MongoDB...')	
+logger.info('Connecting to MongoDB...')
 
-mongoosee.connect(config.MONGODB_URI as string, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false,
-  useCreateIndex: true
-}).then(() => {
-  logger.info('Connected to MongoDB')	
-}).catch(error => {
-  logger.error('Error connecting to MongoDB: %s', (error as Error).message)	
-})
+mongoosee
+  .connect(config.MONGODB_URI as string, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false,
+    useCreateIndex: true
+  })
+  .then(() => {
+    logger.info('Connected to MongoDB')
+  })
+  .catch(error => {
+    logger.error('Error connecting to MongoDB: %s', (error as Error).message)
+  })
 
 const app = express()
 
@@ -36,14 +40,17 @@ app.use(compression())
 app.use(cors())
 app.use(express.json())
 
-app.use(morgan('tiny', {
-  stream: {
-    write (str) {
-      logger.info(str.replace(/\n$/, ''))
+app.use(
+  morgan('tiny', {
+    stream: {
+      write(str) {
+        logger.info(str.replace(/\n$/, ''))
+      }
     }
-  }
-}))
+  })
+)
 
+app.use('/user', userRouter)
 app.use('/users', usersRouter)
 app.use('/courses', coursesRouter)
 app.use('/exams', examsRouter)

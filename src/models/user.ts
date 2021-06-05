@@ -7,17 +7,17 @@ import { Role } from '@/types'
 
 export interface UserDocument extends Document {
   name: {
-    first: string,
+    first: string
     last: string
-  },
-  fullName: string,
-  passwordHash?: string,
-  courses: string[],
-  recentCourses: string[],
-  email: string,
-  verified: boolean,
-  avatarUrl: string,
-  referenceImageUrl?: string,
+  }
+  fullName: string
+  passwordHash?: string
+  courses: string[]
+  recentCourses: string[]
+  email: string
+  verified: boolean
+  avatarUrl: string
+  referenceImageUrl?: string
   role: Role
 }
 
@@ -37,18 +37,22 @@ const userSchema = new Schema({
     required: true,
     select: false
   },
-  courses: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Course',
-    required: false,
-    default: []
-  }],
-  recentCourses: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Course',
-    required: false,
-    default: []
-  }],
+  courses: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
+      required: false,
+      default: []
+    }
+  ],
+  recentCourses: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Course',
+      required: false,
+      default: []
+    }
+  ],
   email: {
     type: String,
     required: true,
@@ -79,17 +83,19 @@ userSchema.virtual('fullName').get(function (this: UserDocument) {
 })
 
 userSchema.post('findOneAndDelete', async (user: UserDocument) => {
-  await Promise.all([ 
-    Course.updateMany({
-      _id: {
-        $in: user.courses
+  await Promise.all([
+    Course.updateMany(
+      {
+        _id: {
+          $in: user.courses
+        }
+      },
+      {
+        $pull: {
+          studentsEnrolled: user._id
+        }
       }
-    },
-    {
-      $pull: {
-        studentsEnrolled: user._id
-      }
-    }),
+    ),
     ExamAttempt.deleteMany({ user: user._id }),
     ExamResult.deleteMany({ user: user._id })
   ])
