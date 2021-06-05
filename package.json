@@ -1,6 +1,6 @@
 {
   "name": "proctor-vue-server",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Proctor Vue server using TypeScript, Express, and MongoDB",
   "repository": {
     "type": "git",
