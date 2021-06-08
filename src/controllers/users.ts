@@ -98,7 +98,27 @@ usersRouter.get('/:id/courses', async (req, res) => {
     const courses = await Course.find({ _id: { $in: user.courses } }).sort(
       'name'
     )
-    res.json(courses)
+    const coursesWithProgress = courses.map(async course => {
+      const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
+        exam: {
+          $in: course.exams
+        },
+        user: user._id,
+        score: { $gt: 0 }
+      })
+
+      const percentage =
+        uniqueExamsTakenByUser.length === 0
+          ? 0
+          : Math.floor(
+              (uniqueExamsTakenByUser.length / course.exams.length) * 100
+            )
+      return {
+        ...course.toJSON(),
+        progress: percentage
+      }
+    })
+    res.json(await Promise.all(coursesWithProgress))
   } else {
     res.status(404).end()
   }
