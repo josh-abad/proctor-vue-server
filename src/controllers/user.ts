@@ -136,6 +136,22 @@ userRouter.delete('/', authenticate, async (req, res) => {
   res.sendStatus(204)
 })
 
+userRouter.get('/exams', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user) {
+    res.sendStatus(404)
+  } else {
+    const exams = await Exam.find({
+      course: {
+        $in: user.courses
+      }
+    }).populate('course')
+
+    res.json(exams)
+  }
+})
+
 userRouter.get('/upcoming-exams', authenticate, async (req, res) => {
   const user = req.user
 
