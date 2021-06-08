@@ -8,7 +8,6 @@ import upload from '@/utils/image-upload'
 import ExamAttempt from '@/models/exam-attempt'
 import Exam from '@/models/exam'
 import Course from '@/models/course'
-import { Event } from '@/types'
 import config from '@/utils/config'
 
 const usersRouter = Router()
@@ -99,15 +98,40 @@ usersRouter.get('/:id/courses', async (req, res) => {
     const courses = await Course.find({ _id: { $in: user.courses } }).sort(
       'name'
     )
-    res.json(courses)
+    const coursesWithProgress = courses.map(async course => {
+      const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
+        exam: {
+          $in: course.exams
+        },
+        user: user._id,
+        score: { $gt: 0 }
+      })
+
+      const percentage =
+        uniqueExamsTakenByUser.length === 0
+          ? 0
+          : Math.floor(
+              (uniqueExamsTakenByUser.length / course.exams.length) * 100
+            )
+      return {
+        ...course.toJSON(),
+        progress: percentage
+      }
+    })
+    res.json(await Promise.all(coursesWithProgress))
   } else {
     res.status(404).end()
   }
 })
 
 usersRouter.get('/:id/attempts', async (req, res) => {
+  const limit = req.query.limit ? Number(req.query.limit) : 0
+
   const attempts = await ExamAttempt.find({ user: req.params.id })
-    .populate('exam')
+    .sort('-startDate')
+    .limit(limit)
+    .populate({ path: 'exam', populate: { path: 'course' } })
+    .populate('user')
     .populate('examResult')
   res.json(attempts)
 })
@@ -209,57 +233,6 @@ usersRouter.get('/:id/open-exams', async (req, res) => {
     .populate('course')
 
   res.json(exams)
-})
-
-usersRouter.get('/:id/recent-activity', async (req, res) => {
-  const user = await User.findById(req.params.id)
-
-  if (!user) {
-    res.status(404).end()
-    return
-  }
-
-  const attempts = await ExamAttempt.find({ user: user.id })
-  const events: Event[] = []
-  for (const attempt of attempts) {
-    const exam = await Exam.findById(attempt.exam)
-    const course = await Course.findById(exam?.course)
-
-    if (!exam || !course) {
-      continue
-    }
-
-    const sharedEventInfo = {
-      location: course.name,
-      locationUrl: `/courses/${course.id}`,
-      subject: user.name.first,
-      subjectId: user.id,
-      subjectUrl: `/user/${user.id}`,
-      predicate: exam.label,
-      predicateUrl: `/courses/${course.id}/exams/${exam.id}`,
-      avatarUrl: user.avatarUrl
-    }
-    const startAttemptEvent: Event = {
-      ...sharedEventInfo,
-      action: 'started',
-      date: attempt.startDate
-    }
-    events.push(startAttemptEvent)
-    if (attempt.status === 'completed') {
-      const submitAttemptEvent: Event = {
-        ...sharedEventInfo,
-        action: 'completed',
-        date: attempt.submittedDate
-      }
-      events.push(submitAttemptEvent)
-    }
-  }
-
-  events.sort((a, b) => {
-    return new Date(b.date).valueOf() - new Date(a.date).valueOf()
-  })
-
-  res.json(events)
 })
 
 usersRouter.post(

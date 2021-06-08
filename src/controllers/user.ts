@@ -5,7 +5,7 @@ import upload from '@/utils/image-upload'
 import config from '@/utils/config'
 import { authenticate } from '../utils/middleware'
 import ExamAttempt from '@/models/exam-attempt'
-import { CourseGrades, Event } from '@/types'
+import { CourseGrades } from '@/types'
 
 const userRouter = Router()
 
@@ -74,11 +74,15 @@ userRouter.get('/exams-taken/:id', authenticate, async (req, res) => {
 })
 
 userRouter.get('/attempts', authenticate, async (req, res) => {
+  const limit = req.query.limit ? Number(req.query.limit) : 0
   const user = req.user
 
   if (user) {
     const attempts = await ExamAttempt.find({ user: user._id })
-      .populate('exam')
+      .sort('-startDate')
+      .limit(limit)
+      .populate({ path: 'exam', populate: { path: 'course' } })
+      .populate('user')
       .populate('examResult')
     res.json(attempts)
   } else {
@@ -130,6 +134,22 @@ userRouter.delete('/', authenticate, async (req, res) => {
   const user = req.user
   await user?.delete()
   res.sendStatus(204)
+})
+
+userRouter.get('/exams', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user) {
+    res.sendStatus(404)
+  } else {
+    const exams = await Exam.find({
+      course: {
+        $in: user.courses
+      }
+    }).populate('course')
+
+    res.json(exams)
+  }
 })
 
 userRouter.get('/upcoming-exams', authenticate, async (req, res) => {
@@ -308,122 +328,4 @@ userRouter.get('/grades/:id', authenticate, async (req, res) => {
   res.json(grades)
 })
 
-userRouter.get('/recent-activity', authenticate, async (req, res) => {
-  const user = req.user
-  const limit = Number(req.query.limit) ?? 10
-
-  if (!user) {
-    res.status(404).end()
-    return
-  }
-
-  const attempts = await ExamAttempt.find({ user: user.id }).limit(limit)
-
-  // const activity = await ExamAttempt.aggregate([
-  //   {
-  //     $match: {
-  //       user: user._id
-  //     }
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: 'exams',
-  //       localField: 'exam',
-  //       foreignField: '_id',
-  //       as: 'exam'
-  //     }
-  //   },
-  //   {
-  //     $unwind: '$exam'
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: 'courses',
-  //       localField: 'exam.course',
-  //       foreignField: '_id',
-  //       as: 'course'
-  //     }
-  //   },
-  //   {
-  //     $unwind: '$course'
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: 'examresults',
-  //       localField: 'examResult',
-  //       foreignField: '_id',
-  //       as: 'examResult'
-  //     }
-  //   },
-  //   {
-  //     $unwind: '$examResult'
-  //   },
-  //   {
-  //     $project: {
-  //       examResultId: '$examResult._id',
-  //       location: '$course.name',
-  //       locationUrl: { $concat: ['/courses/', { $toString: '$course._id' }] },
-  //       subject: { $literal: user.name.first },
-  //       subjectId: { $literal: user.id },
-  //       subjectUrl: { $concat: ['/user/', user.id] },
-  //       predicate: '$exam.label',
-  //       predicateUrl: {
-  //         $concat: [
-  //           '/courses/',
-  //           { $toString: '$course._id' },
-  //           '/exams/',
-  //           { $toString: '$exam._id' }
-  //         ]
-  //       },
-  //       avatarUrl: { $literal: user.avatarUrl },
-  //       action: { $literal: 'started' },
-  //       date: '$startDate',
-  //       id: '$_id',
-  //       _id: 0
-  //     }
-  //   }
-  // ])
-  // res.json(activity)
-
-  const events: Event[] = []
-  for (const attempt of attempts) {
-    const exam = await Exam.findById(attempt.exam)
-    const course = await Course.findById(exam?.course)
-
-    if (!exam || !course) {
-      continue
-    }
-
-    const sharedEventInfo = {
-      location: course.name,
-      locationUrl: `/courses/${course.id}`,
-      subject: user.name.first,
-      subjectId: user.id,
-      subjectUrl: `/user/${user.id}`,
-      predicate: exam.label,
-      predicateUrl: `/courses/${course.id}/exams/${exam.id}`,
-      avatarUrl: user.avatarUrl
-    }
-    const startAttemptEvent: Event = {
-      ...sharedEventInfo,
-      action: 'started',
-      date: attempt.startDate
-    }
-    events.push(startAttemptEvent)
-    if (attempt.status === 'completed') {
-      const submitAttemptEvent: Event = {
-        ...sharedEventInfo,
-        action: 'completed',
-        date: attempt.submittedDate
-      }
-      events.push(submitAttemptEvent)
-    }
-  }
-
-  events.sort((a, b) => {
-    return new Date(b.date).valueOf() - new Date(a.date).valueOf()
-  })
-
-  res.json(events)
-})
 export default userRouter
