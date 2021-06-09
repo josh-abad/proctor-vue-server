@@ -217,11 +217,9 @@ userRouter.post(
   }
 )
 
-userRouter.get('/grades/:id', authenticate, async (req, res) => {
-  const { id } = req.params
-
+userRouter.get('/grades/:slug', authenticate, async (req, res) => {
   const user = req.user
-  const course = await Course.findById(id)
+  const course = await Course.findOne({ slug: req.params.slug })
 
   if (!course || !user) {
     res.status(404).end()
@@ -232,7 +230,8 @@ userRouter.get('/grades/:id', authenticate, async (req, res) => {
     courseId: course._id,
     courseName: course.name,
     exams: [],
-    courseTotal: 0
+    courseTotal: 0,
+    courseSlug: course.slug
   }
 
   // TODO: allow custom weight
@@ -281,6 +280,7 @@ userRouter.get('/grades/:id', authenticate, async (req, res) => {
         weightPercentage: 1,
         id: 1,
         label: '$exam.label',
+        slug: '$exam.slug',
         grade: {
           $floor: {
             $multiply: [

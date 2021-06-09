@@ -9,6 +9,7 @@ export interface CourseDocument extends Document {
   coordinator: string
   studentsEnrolled: string[]
   weeks: number
+  slug: string
 }
 
 const courseSchema = new Schema({
@@ -38,6 +39,10 @@ const courseSchema = new Schema({
   ],
   weeks: {
     type: Number,
+    required: true
+  },
+  slug: {
+    type: String,
     required: true
   }
 })

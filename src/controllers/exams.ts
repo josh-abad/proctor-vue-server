@@ -3,6 +3,7 @@ import Course from '@/models/course'
 import Exam, { ExamDocument } from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
 import { authenticate } from '@/utils/middleware'
+import slugify from 'slugify'
 
 const examsRouter = Router()
 
@@ -33,6 +34,17 @@ examsRouter.post('/', authenticate, async (req, res) => {
     return
   }
 
+  const examNameExists = await Exam.exists({
+    label: { $regex: body.label, $options: 'i' },
+    course: course?._id
+  })
+  if (examNameExists) {
+    res.status(401).send({
+      error: `Exam name '${body.name}' already taken.`
+    })
+    return
+  }
+
   const exam = new Exam({
     label: body.label,
     examItems: body.examItems,
@@ -43,7 +55,11 @@ examsRouter.post('/', authenticate, async (req, res) => {
     maxAttempts: body.maxAttempts,
     week: body.week,
     startDate: body.startDate,
-    endDate: body.endDate
+    endDate: body.endDate,
+    slug: slugify(body.lablel, {
+      lower: true,
+      strict: true
+    })
   } as ExamDocument)
 
   const savedExam = await exam.save()

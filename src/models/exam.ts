@@ -45,6 +45,7 @@ export interface ExamDocument extends Document {
   week: number
   startDate: Date
   endDate: Date
+  slug: string
 }
 
 const examSchema = new Schema({
@@ -84,6 +85,10 @@ const examSchema = new Schema({
   },
   endDate: {
     type: Date,
+    required: true
+  },
+  slug: {
+    type: String,
     required: true
   }
 })

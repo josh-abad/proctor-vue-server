@@ -10,7 +10,9 @@ export interface UserToken {
 export interface CourseGrades {
   courseName: string
   courseId: string
+  courseSlug: string
   exams: {
+    slug: string
     label: string
     id: string
     weight: number
