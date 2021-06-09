@@ -22,9 +22,10 @@ userRouter.get('/', authenticate, async (req, res) => {
 userRouter.get('/courses', authenticate, async (req, res) => {
   const user = req.user
   if (user) {
-    const courses = await Course.find({ _id: { $in: user.courses } }).sort(
-      'name'
-    )
+    const courses =
+      user.role === 'admin'
+        ? await Course.find({}).sort('name')
+        : await Course.find({ _id: { $in: user.courses } }).sort('name')
     const coursesWithProgress = courses.map(async course => {
       const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
         exam: {
