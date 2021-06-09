@@ -22,9 +22,10 @@ userRouter.get('/', authenticate, async (req, res) => {
 userRouter.get('/courses', authenticate, async (req, res) => {
   const user = req.user
   if (user) {
-    const courses = await Course.find({ _id: { $in: user.courses } }).sort(
-      'name'
-    )
+    const courses =
+      user.role === 'admin'
+        ? await Course.find({}).sort('name')
+        : await Course.find({ _id: { $in: user.courses } }).sort('name')
     const coursesWithProgress = courses.map(async course => {
       const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
         exam: {
@@ -71,6 +72,53 @@ userRouter.get('/exams-taken/:id', authenticate, async (req, res) => {
     })
     res.json(await Promise.all(examsTaken))
   }
+})
+
+userRouter.get('/active-exam', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user) {
+    res.sendStatus(404)
+    return
+  }
+
+  const examSlug = req.query.exam
+  const courseSlug = req.query.course
+
+  if (typeof courseSlug !== 'string' || typeof examSlug !== 'string') {
+    res.sendStatus(401)
+    return
+  }
+
+  const course = await Course.findOne({ slug: courseSlug })
+
+  if (!course) {
+    res.sendStatus(404)
+    return
+  }
+
+  const exam = await Exam.findOne({ slug: examSlug, course: course._id })
+
+  if (!exam) {
+    res.sendStatus(404)
+    return
+  }
+
+  const attempt = await ExamAttempt.findOne({
+    status: 'in-progress',
+    exam: exam._id,
+    user: user._id
+  }).populate({
+    path: 'exam',
+    populate: { path: 'course' }
+  })
+
+  if (!attempt) {
+    res.sendStatus(404)
+    return
+  }
+
+  res.json(attempt)
 })
 
 userRouter.get('/attempts', authenticate, async (req, res) => {
@@ -216,11 +264,9 @@ userRouter.post(
   }
 )
 
-userRouter.get('/grades/:id', authenticate, async (req, res) => {
-  const { id } = req.params
-
+userRouter.get('/grades/:slug', authenticate, async (req, res) => {
   const user = req.user
-  const course = await Course.findById(id)
+  const course = await Course.findOne({ slug: req.params.slug })
 
   if (!course || !user) {
     res.status(404).end()
@@ -231,7 +277,8 @@ userRouter.get('/grades/:id', authenticate, async (req, res) => {
     courseId: course._id,
     courseName: course.name,
     exams: [],
-    courseTotal: 0
+    courseTotal: 0,
+    courseSlug: course.slug
   }
 
   // TODO: allow custom weight
@@ -280,6 +327,7 @@ userRouter.get('/grades/:id', authenticate, async (req, res) => {
         weightPercentage: 1,
         id: 1,
         label: '$exam.label',
+        slug: '$exam.slug',
         grade: {
           $floor: {
             $multiply: [

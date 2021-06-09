@@ -4,7 +4,6 @@ import User from '@/models/user'
 import md5 from 'md5'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from './email-helper'
-import upload from '@/utils/image-upload'
 import ExamAttempt from '@/models/exam-attempt'
 import Exam from '@/models/exam'
 import Course from '@/models/course'
@@ -159,30 +158,6 @@ usersRouter.get('/:id/recent-courses', async (req, res) => {
   }
 })
 
-usersRouter.put('/:id/recent-courses', async (req, res) => {
-  const body = req.body
-
-  const user = await User.findById(req.params.id)
-  if (user && body.courseId) {
-    if (!user.courses.some(courseId => courseId.toString() === body.courseId)) {
-      res.status(401).json({
-        error: 'Student is not enrolled in course.'
-      })
-      return
-    }
-
-    if (user.recentCourses.includes(body.courseId)) {
-      user.recentCourses = user.recentCourses.filter(
-        id => id.toString() !== body.courseId
-      )
-    }
-
-    user.recentCourses.push(body.courseId)
-    const updatedUser = await user.save()
-    res.json(updatedUser.recentCourses)
-  }
-})
-
 usersRouter.delete('/:id', async (req, res) => {
   await User.findByIdAndDelete(req.params.id)
   res.status(204).end()
@@ -234,21 +209,5 @@ usersRouter.get('/:id/open-exams', async (req, res) => {
 
   res.json(exams)
 })
-
-usersRouter.post(
-  '/:id/reference-image',
-  upload.single('image'),
-  async (req, res) => {
-    const filename = (req.file as Express.MulterS3.File).key
-    const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { referenceImageUrl },
-      { new: true }
-    ).populate('courses')
-    res.json(updatedUser)
-  }
-)
 
 export default usersRouter

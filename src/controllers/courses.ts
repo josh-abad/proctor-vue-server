@@ -4,6 +4,7 @@ import Course from '@/models/course'
 import Exam from '@/models/exam'
 import User from '@/models/user'
 import ExamAttempt from '@/models/exam-attempt'
+import slugify from 'slugify'
 
 const coursesRouter = Router()
 
@@ -18,11 +19,25 @@ coursesRouter.post('/', async (req, res) => {
     return
   }
 
+  const courseNameExists = await Course.exists({
+    name: { $regex: body.name, $options: 'i' }
+  })
+  if (courseNameExists) {
+    res.status(401).send({
+      error: `Course name '${body.name}' already taken.`
+    })
+    return
+  }
+
   const course = new Course({
     name: body.name,
     description: body.description,
     coordinator: coordinator._id,
-    weeks: body.weeks
+    weeks: body.weeks,
+    slug: slugify(body.name, {
+      lower: true,
+      strict: true
+    })
   })
 
   coordinator.courses.push(course._id)
@@ -37,8 +52,8 @@ coursesRouter.get('/', async (_req, res) => {
   res.json(courses)
 })
 
-coursesRouter.get('/:id', async (req, res) => {
-  const course = await Course.findById(req.params.id)
+coursesRouter.get('/:slug', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.slug })
     .populate('coordinator')
     .populate('exams')
   if (course) {
@@ -48,8 +63,8 @@ coursesRouter.get('/:id', async (req, res) => {
   }
 })
 
-coursesRouter.get('/:id/students', async (req, res) => {
-  const course = await Course.findById(req.params.id)
+coursesRouter.get('/:slug/students', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.slug })
   if (course) {
     const students = await User.find({
       _id: { $in: course.studentsEnrolled }
@@ -60,10 +75,8 @@ coursesRouter.get('/:id/students', async (req, res) => {
   }
 })
 
-coursesRouter.get('/:id/progress/:user', async (req, res) => {
-  const { id, user } = req.params
-
-  const course = await Course.findById(id)
+coursesRouter.get('/:slug/progress/:user', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.slug })
 
   if (!course) {
     res.status(404).end()
@@ -74,7 +87,8 @@ coursesRouter.get('/:id/progress/:user', async (req, res) => {
     exam: {
       $in: course.exams
     },
-    user
+    user: req.params.user,
+    score: { $gt: 0 }
   })
 
   const percentage =
@@ -90,14 +104,29 @@ coursesRouter.get('/:id/exams', async (req, res) => {
   res.json(exams)
 })
 
-coursesRouter.get('/:id/grades/:user', async (req, res) => {
-  const { id, user } = req.params
+coursesRouter.get('/:courseSlug/exams/:examSlug', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.courseSlug })
+  if (course) {
+    const exam = await Exam.findOne({
+      slug: req.params.examSlug,
+      course: course._id
+    }).populate('course')
 
-  const examsInCourse = await Exam.find({ course: id })
+    if (exam) {
+      res.json(exam)
+    } else {
+      res.sendStatus(404)
+    }
+  } else {
+    res.sendStatus(404)
+  }
+})
 
-  const course = await Course.findById(id)
+coursesRouter.get('/:slug/grades/:userId', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.slug })
+  const user = await User.findById(req.params.userId)
 
-  if (!course) {
+  if (!course || !user) {
     res.status(404).end()
     return
   }
@@ -106,55 +135,134 @@ coursesRouter.get('/:id/grades/:user', async (req, res) => {
     courseId: course._id,
     courseName: course.name,
     exams: [],
-    courseTotal: 0
+    courseTotal: 0,
+    courseSlug: course.slug
   }
 
   // TODO: allow custom weight
-  const weight = 1 / examsInCourse.length
-  for (const exam of examsInCourse) {
-    const examAttempts = await ExamAttempt.find({ exam: exam.id, user })
+  const weight = 1 / course.exams.length
+  const weightPercentage = (weight * 100).toLocaleString('en-US', {
+    maximumFractionDigits: 1
+  })
 
-    const highestScore = examAttempts.reduce((a, b) => {
-      return Math.max(a, b.score)
-    }, 0)
+  grades.exams = await ExamAttempt.aggregate([
+    {
+      $match: {
+        user: user._id,
+        exam: { $in: course.exams }
+      }
+    },
+    {
+      $group: {
+        _id: '$exam',
+        score: { $max: '$score' }
+      }
+    },
+    {
+      $project: {
+        weight: { $literal: weight },
+        weightPercentage: { $literal: weightPercentage },
+        id: '$_id',
+        exam: '$_id',
+        _id: 0,
+        score: 1
+      }
+    },
+    {
+      $lookup: {
+        from: 'exams',
+        localField: 'exam',
+        foreignField: '_id',
+        as: 'exam'
+      }
+    },
+    {
+      $unwind: '$exam'
+    },
+    {
+      $project: {
+        weight: 1,
+        weightPercentage: 1,
+        id: 1,
+        label: '$exam.label',
+        slug: '$exam.slug',
+        grade: {
+          $floor: {
+            $multiply: [
+              {
+                $divide: [
+                  '$score',
+                  {
+                    $size: '$exam.examItems'
+                  }
+                ]
+              },
+              100
+            ]
+          }
+        }
+      }
+    }
+  ])
 
-    grades.exams.push({
-      weight,
-      label: exam.label,
-      id: exam.id,
-      weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
-      grade: Math.floor(highestScore / exam.examItems.length * 100)
-    })
-  }
+  // grades.exams.push(...attempts.map(({ exam, score, examId }) => ({
+  //   weight,
+  //   label: exam[0].label,
+  //   id: examId,
+  //   weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
+  //   grade: Math.floor(score / exam[0].examItems.length * 100)
+  // })))
+
+  // for (const exam of examsInCourse) {
+  //   const examAttempts = await ExamAttempt.find({ exam: exam.id, user: user.id }).sort('-score').limit(1)
+
+  // const highestScore = examAttempts[0]?.score ?? 0
+
+  //   grades.exams.push({
+  //     weight,
+  //     label: exam.label,
+  //     id: exam.id,
+  //     weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
+  //     grade: Math.floor(highestScore / exam.examItems.length * 100)
+  //   })
+  // }
 
   grades.courseTotal = Math.round(
-    grades.exams
-      .map(exam => exam.grade * weight)
-      .reduce((a, b) => a + b, 0)
+    grades.exams.map(exam => exam.grade * weight).reduce((a, b) => a + b, 0)
   )
 
   res.json(grades)
 })
 
-coursesRouter.get('/:course/exams/week/:week', async (req, res) => {
-  const { course, week } = req.params
-  const exams = await Exam.find({ course, week: Number(week) }).populate(
-    'course'
-  )
-  res.json(exams)
+coursesRouter.get('/:slug/exams/week/:week', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.slug })
+  if (!course) {
+    res.sendStatus(404)
+  } else {
+    const exams = await Exam.find({
+      course: course._id,
+      week: Number(req.params.week)
+    }).populate('course')
+    res.json(exams)
+  }
 })
 
 coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
-  const exams = await Exam.find({
-    course: req.params.id,
-    startDate: {
-      $gt: new Date()
-    }
-  })
-    .sort('startDate')
-    .populate('course')
+  const course = await Course.findById(req.params.id)
+  if (!course) {
+    res.sendStatus(404)
+  } else {
+    const exams = await Exam.find({
+      course: course._id,
+      startDate: {
+        $gt: new Date()
+      }
+    })
+      .sort('startDate')
+      .populate('course')
 
-  res.json(exams)
+    res.json(exams)
+  }
 })
 
 coursesRouter.put('/:courseId', async (req, res) => {
@@ -226,33 +334,38 @@ coursesRouter.put('/:courseId', async (req, res) => {
   }
 })
 
-coursesRouter.delete('/:id', async (req, res) => {
-  await Course.findByIdAndDelete(req.params.id)
+coursesRouter.delete('/:slug', async (req, res) => {
+  await Course.findOneAndDelete({ slug: req.params.slug })
   res.status(204).end()
 })
 
-coursesRouter.delete('/:courseId/students/:studentId', async (req, res) => {
-  await Course.update(
-    {
-      _id: req.params.courseId
-    },
-    {
-      $pull: {
-        studentsEnrolled: req.params.studentId
+coursesRouter.delete('/:courseSlug/students/:studentId', async (req, res) => {
+  const course = await Course.findOne({ slug: req.params.courseSlug })
+  if (!course) {
+    res.sendStatus(404)
+  } else {
+    await Course.updateOne(
+      {
+        _id: course._id
+      },
+      {
+        $pull: {
+          studentsEnrolled: req.params.studentId
+        }
       }
-    }
-  )
-  await User.update(
-    {
-      _id: req.params.studentId
-    },
-    {
-      $pull: {
-        courses: req.params.courseId
+    )
+    await User.updateOne(
+      {
+        _id: req.params.studentId
+      },
+      {
+        $pull: {
+          courses: req.params.courseId
+        }
       }
-    }
-  )
-  res.status(204).end()
+    )
+    res.status(204).end()
+  }
 })
 
 export default coursesRouter
