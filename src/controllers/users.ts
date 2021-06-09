@@ -4,7 +4,6 @@ import User from '@/models/user'
 import md5 from 'md5'
 import jwt from 'jsonwebtoken'
 import { sendVerificationEmail } from './email-helper'
-import upload from '@/utils/image-upload'
 import ExamAttempt from '@/models/exam-attempt'
 import Exam from '@/models/exam'
 import Course from '@/models/course'
@@ -234,21 +233,5 @@ usersRouter.get('/:id/open-exams', async (req, res) => {
 
   res.json(exams)
 })
-
-usersRouter.post(
-  '/:id/reference-image',
-  upload.single('image'),
-  async (req, res) => {
-    const filename = (req.file as Express.MulterS3.File).key
-    const referenceImageUrl = `${config.CLOUDFRONT_DOMAIN}${filename}`
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { referenceImageUrl },
-      { new: true }
-    ).populate('courses')
-    res.json(updatedUser)
-  }
-)
 
 export default usersRouter
