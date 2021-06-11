@@ -14,14 +14,6 @@ const usersRouter = Router()
 usersRouter.post('/', async (req, res) => {
   const body = req.body
 
-  const emailExists = await User.exists({ email: body.email })
-  if (emailExists) {
-    res.status(401).json({
-      error: 'Email is already taken.'
-    })
-    return
-  }
-
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(body.password, saltRounds)
 

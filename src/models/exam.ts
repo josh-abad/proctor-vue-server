@@ -1,4 +1,5 @@
 import { Schema, Document, model } from 'mongoose'
+import uniqueValidator from 'mongoose-unique-validator'
 import Course from './course'
 import ExamAttempt from './exam-attempt'
 import ExamResult from './exam-result'
@@ -92,6 +93,10 @@ const examSchema = new Schema({
     required: true
   }
 })
+
+examSchema.index({ course: 1, slug: 1 }, { unique: true })
+
+examSchema.plugin(uniqueValidator)
 
 examSchema.post('findOneAndDelete', async (exam: ExamDocument) => {
   await Promise.all([

@@ -34,17 +34,6 @@ examsRouter.post('/', authenticate, async (req, res) => {
     return
   }
 
-  const examNameExists = await Exam.exists({
-    label: { $regex: body.label, $options: 'i' },
-    course: course?._id
-  })
-  if (examNameExists) {
-    res.status(401).send({
-      error: `Exam name '${body.name}' already taken.`
-    })
-    return
-  }
-
   const exam = new Exam({
     label: body.label,
     examItems: body.examItems,
@@ -56,7 +45,7 @@ examsRouter.post('/', authenticate, async (req, res) => {
     week: body.week,
     startDate: body.startDate,
     endDate: body.endDate,
-    slug: slugify(body.lablel, {
+    slug: slugify(body.label, {
       lower: true,
       strict: true
     })
