@@ -81,7 +81,10 @@ examsRouter.get('/:exam/taken-by/:user', async (req, res) => {
 
 examsRouter.get('/:exam/attempts/:user', async (req, res) => {
   const { exam, user } = req.params
-  const examAttemptsByUser = await ExamAttempt.find({ exam, user })
+  const examAttemptsByUser = await ExamAttempt.find({ exam, user }).populate({
+    path: 'exam',
+    populate: { path: 'course' }
+  })
   res.json(examAttemptsByUser)
 })
 

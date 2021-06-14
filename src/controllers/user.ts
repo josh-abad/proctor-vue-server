@@ -74,65 +74,36 @@ userRouter.get('/exams-taken/:id', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/active-exam', authenticate, async (req, res) => {
-  const user = req.user
-
-  if (!user) {
-    res.sendStatus(404)
-    return
-  }
-
-  const examSlug = req.query.exam
-  const courseSlug = req.query.course
-
-  if (typeof courseSlug !== 'string' || typeof examSlug !== 'string') {
-    res.sendStatus(401)
-    return
-  }
-
-  const course = await Course.findOne({ slug: courseSlug })
-
-  if (!course) {
-    res.sendStatus(404)
-    return
-  }
-
-  const exam = await Exam.findOne({ slug: examSlug, course: course._id })
-
-  if (!exam) {
-    res.sendStatus(404)
-    return
-  }
-
-  const attempt = await ExamAttempt.findOne({
-    status: 'in-progress',
-    exam: exam._id,
-    user: user._id
-  }).populate({
-    path: 'exam',
-    populate: { path: 'course' }
-  })
-
-  if (!attempt) {
-    res.sendStatus(404)
-    return
-  }
-
-  res.json(attempt)
-})
-
 userRouter.get('/attempts', authenticate, async (req, res) => {
   const limit = req.query.limit ? Number(req.query.limit) : 0
+  const examId = req.query.exam
   const user = req.user
 
   if (user) {
-    const attempts = await ExamAttempt.find({ user: user._id })
-      .sort('-startDate')
-      .limit(limit)
-      .populate({ path: 'exam', populate: { path: 'course' } })
-      .populate('user')
-      .populate('examResult')
-    res.json(attempts)
+    if (examId) {
+      if (typeof examId === 'string') {
+        const attemptsByExam = await ExamAttempt.find({
+          user: user._id,
+          exam: examId
+        })
+          .sort('-startDate')
+          .limit(limit)
+          .populate({ path: 'exam', populate: { path: 'course' } })
+          .populate('user')
+          .populate('examResult')
+        res.json(attemptsByExam)
+      } else {
+        res.sendStatus(401)
+      }
+    } else {
+      const attempts = await ExamAttempt.find({ user: user._id })
+        .sort('-startDate')
+        .limit(limit)
+        .populate({ path: 'exam', populate: { path: 'course' } })
+        .populate('user')
+        .populate('examResult')
+      res.json(attempts)
+    }
   } else {
     res.sendStatus(404)
   }
