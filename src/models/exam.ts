@@ -9,6 +9,7 @@ interface ExamItem {
   choices: string[]
   answer: string[]
   questionType: 'text' | 'multiple choice' | 'multiple answers'
+  shuffleChoices: boolean
 }
 
 const examItemSchema = new Schema({
@@ -32,6 +33,10 @@ const examItemSchema = new Schema({
   questionType: {
     type: String,
     required: true
+  },
+  shuffleChoices: {
+    type: Boolean,
+    default: false
   }
 })
 
