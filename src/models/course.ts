@@ -1,4 +1,5 @@
 import { Schema, Document, model } from 'mongoose'
+import uniqueValidator from 'mongoose-unique-validator'
 import Exam from './exam'
 import User from './user'
 
@@ -15,7 +16,8 @@ export interface CourseDocument extends Document {
 const courseSchema = new Schema({
   name: {
     type: String,
-    required: true
+    required: true,
+    unique: true
   },
   description: {
     type: String,
@@ -43,9 +45,12 @@ const courseSchema = new Schema({
   },
   slug: {
     type: String,
-    required: true
+    required: true,
+    unique: true
   }
 })
+
+courseSchema.plugin(uniqueValidator)
 
 courseSchema.post('findOneAndDelete', async (course: CourseDocument) => {
   await Promise.all([

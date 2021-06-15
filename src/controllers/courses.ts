@@ -19,16 +19,6 @@ coursesRouter.post('/', async (req, res) => {
     return
   }
 
-  const courseNameExists = await Course.exists({
-    name: { $regex: body.name, $options: 'i' }
-  })
-  if (courseNameExists) {
-    res.status(401).send({
-      error: `Course name '${body.name}' already taken.`
-    })
-    return
-  }
-
   const course = new Course({
     name: body.name,
     description: body.description,

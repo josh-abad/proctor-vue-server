@@ -1,4 +1,5 @@
 import { Schema, Document, model } from 'mongoose'
+import uniqueValidator from 'mongoose-unique-validator'
 import Course from './course'
 import ExamAttempt from './exam-attempt'
 import ExamResult from './exam-result'
@@ -8,6 +9,7 @@ interface ExamItem {
   choices: string[]
   answer: string[]
   questionType: 'text' | 'multiple choice' | 'multiple answers'
+  shuffleChoices: boolean
 }
 
 const examItemSchema = new Schema({
@@ -31,6 +33,10 @@ const examItemSchema = new Schema({
   questionType: {
     type: String,
     required: true
+  },
+  shuffleChoices: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -92,6 +98,10 @@ const examSchema = new Schema({
     required: true
   }
 })
+
+examSchema.index({ course: 1, slug: 1 }, { unique: true })
+
+examSchema.plugin(uniqueValidator)
 
 examSchema.post('findOneAndDelete', async (exam: ExamDocument) => {
   await Promise.all([
