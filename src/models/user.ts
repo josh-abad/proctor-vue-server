@@ -16,6 +16,7 @@ export interface UserDocument extends Document {
   recentCourses: string[]
   email: string
   verified: boolean
+  active: boolean
   avatarUrl: string
   referenceImageUrl?: string
   role: Role
@@ -61,6 +62,10 @@ const userSchema = new Schema({
   verified: {
     type: Boolean,
     required: true
+  },
+  active: {
+    type: Boolean,
+    default: true
   },
   avatarUrl: {
     type: String,

@@ -24,6 +24,11 @@ loginRouter.post('/', async (req, res) => {
     return
   }
 
+  if (!user.active) {
+    user.active = true
+    await user.save()
+  }
+
   const userForToken = {
     email: user.email,
     id: user._id,

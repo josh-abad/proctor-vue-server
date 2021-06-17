@@ -57,6 +57,7 @@ coursesRouter.get('/:slug/students', async (req, res) => {
   const course = await Course.findOne({ slug: req.params.slug })
   if (course) {
     const students = await User.find({
+      active: true,
       _id: { $in: course.studentsEnrolled }
     }).populate('courses')
     res.json(students)
