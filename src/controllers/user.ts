@@ -347,4 +347,16 @@ userRouter.get('/grades/:slug', authenticate, async (req, res) => {
   res.json(grades)
 })
 
+userRouter.post('/deactivate', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (user) {
+    user.active = false
+    await user.save()
+    res.sendStatus(200)
+  } else {
+    res.sendStatus(404)
+  }
+})
+
 export default userRouter

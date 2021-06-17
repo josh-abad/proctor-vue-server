@@ -22,6 +22,7 @@ usersRouter.post('/', async (req, res) => {
     role: body.role || 'student',
     email: body.email,
     verified: false,
+    active: true,
     avatarUrl: `https://gravatar.com/avatar/${md5(
       body.email.trim()
     )}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
@@ -37,19 +38,22 @@ usersRouter.post('/', async (req, res) => {
     expiresIn: '1h'
   })
 
+  const savedUser = await user.save()
+
   sendVerificationEmail(user.email, token)
 
-  const savedUser = await user.save()
   res.json(savedUser.toJSON())
 })
 
 usersRouter.get('/', async (_req, res) => {
-  const users = await User.find({}).populate('courses').sort('name.last')
+  const users = await User.find({ active: true })
+    .populate('courses')
+    .sort('name.last')
   res.json(users)
 })
 
 usersRouter.get('/students', async (_req, res) => {
-  const students = await User.find({ role: 'student' })
+  const students = await User.find({ active: true, role: 'student' })
     .populate('courses')
     .sort('name.last')
   res.json(students)
@@ -57,6 +61,7 @@ usersRouter.get('/students', async (_req, res) => {
 
 usersRouter.get('/students/:id', async (req, res) => {
   const user = await User.findOne({
+    active: true,
     role: 'student',
     _id: req.params.id
   }).populate('courses')
@@ -68,7 +73,7 @@ usersRouter.get('/students/:id', async (req, res) => {
 })
 
 usersRouter.get('/coordinators', async (_req, res) => {
-  const coordinators = await User.find({ role: 'coordinator' })
+  const coordinators = await User.find({ active: true, role: 'coordinator' })
     .populate('courses')
     .sort('name.last')
   res.json(coordinators)
