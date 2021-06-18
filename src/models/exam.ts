@@ -7,7 +7,7 @@ import ExamResult from './exam-result'
 interface ExamItem {
   question: string
   choices: string[]
-  answer: string[]
+  answer?: string[]
   questionType: 'text' | 'multiple choice' | 'multiple answers'
   shuffleChoices: boolean
 }
@@ -27,7 +27,8 @@ const examItemSchema = new Schema({
   answer: [
     {
       type: String,
-      required: true
+      required: true,
+      select: false
     }
   ],
   questionType: {
@@ -42,7 +43,7 @@ const examItemSchema = new Schema({
 
 export interface ExamDocument extends Document {
   label: string
-  examItems: ExamItem[]
+  examItems: (ExamItem & { id: string })[]
   length: number
   duration: number
   random: boolean
@@ -109,6 +110,14 @@ examSchema.post('findOneAndDelete', async (exam: ExamDocument) => {
     ExamAttempt.deleteMany({ exam: exam._id }),
     ExamResult.deleteMany({ exam: exam._id })
   ])
+})
+
+examItemSchema.set('toJSON', {
+  transform: (_document: Document, returnedObject: ExamItem & Document) => {
+    returnedObject.id = returnedObject._id
+    delete returnedObject._id
+    delete returnedObject.__v
+  }
 })
 
 examSchema.set('toJSON', {
