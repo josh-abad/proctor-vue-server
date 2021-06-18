@@ -52,7 +52,8 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
     startDate,
     endDate,
     exam: exam?._id,
-    examTotal: exam?.examItems.length
+    examTotal: exam?.examItems.length,
+    warnings: 0
   })
 
   const savedExamAttempt = await examAttempt.save()
@@ -62,6 +63,26 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
       .populate({ path: 'exam', populate: { path: 'course' } })
       .execPopulate()
   )
+})
+
+examAttemptsRouter.post('/:id/warnings', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user) {
+    res.sendStatus(401)
+    return
+  }
+
+  await ExamAttempt.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      status: 'in-progress',
+      user: user._id
+    },
+    { $inc: { warnings: 1 } }
+  )
+
+  res.sendStatus(200)
 })
 
 examAttemptsRouter.get('/', async (_req, res) => {
