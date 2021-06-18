@@ -11,6 +11,7 @@ export interface ExamAttemptDocument extends Document {
   examResult: string
   score: number
   examTotal: number
+  warnings: number
 }
 
 const examAttemptSchema = new Schema({
@@ -50,6 +51,10 @@ const examAttemptSchema = new Schema({
   examTotal: {
     type: Number,
     required: true
+  },
+  warnings: {
+    type: Number,
+    default: 0
   }
 })
 

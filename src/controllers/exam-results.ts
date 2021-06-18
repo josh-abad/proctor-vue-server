@@ -9,19 +9,23 @@ const examResultsRouter = Router()
 examResultsRouter.post('/', authenticate, async (req, res) => {
   const body = req.body
 
-  const exam = await Exam.findById(body.examId)
-  const answers = body.answers
+  const exam = await Exam.findById(body.examId).select('examItems _id')
+  const answers: { id: string; answer: string[] | string }[] = body.answers
   const scores: Score[] = []
 
   for (const answer of answers) {
-    const examItem = exam?.examItems.find(ei => ei.question === answer.question)
+    const examItem = exam?.examItems.find(ei => ei.id === answer.id)
     let points = 0
-    if (examItem) {
-      if (examItem && examItem.questionType !== 'multiple answers') {
-        points = examItem.answer[0] === answer.answer ? 1 : 0
+    if (examItem && examItem.answer) {
+      if (
+        examItem &&
+        examItem.questionType !== 'multiple answers' &&
+        typeof answer.answer === 'string'
+      ) {
+        points = examItem.answer?.[0] === answer.answer ? 1 : 0
       } else {
         points = examItem.answer.reduce(
-          (_a, b) => ((answer.answer as string[]).includes(b) ? 1 : 0),
+          (_a, b) => (answer.answer.includes(b) ? 1 : 0),
           0
         )
       }
