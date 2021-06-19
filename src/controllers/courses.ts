@@ -122,101 +122,43 @@ coursesRouter.get('/:slug/grades/:userId', async (req, res) => {
     return
   }
 
-  const grades: CourseGrades = {
-    courseId: course._id,
-    courseName: course.name,
-    exams: [],
-    courseTotal: 0,
-    courseSlug: course.slug
-  }
-
   // TODO: allow custom weight
   const weight = 1 / course.exams.length
   const weightPercentage = (weight * 100).toLocaleString('en-US', {
     maximumFractionDigits: 1
   })
 
-  grades.exams = await ExamAttempt.aggregate([
-    {
-      $match: {
-        user: user._id,
-        exam: { $in: course.exams }
-      }
-    },
-    {
-      $group: {
-        _id: '$exam',
-        score: { $max: '$score' }
-      }
-    },
-    {
-      $project: {
-        weight: { $literal: weight },
-        weightPercentage: { $literal: weightPercentage },
-        id: '$_id',
-        exam: '$_id',
-        _id: 0,
-        score: 1
-      }
-    },
-    {
-      $lookup: {
-        from: 'exams',
-        localField: 'exam',
-        foreignField: '_id',
-        as: 'exam'
-      }
-    },
-    {
-      $unwind: '$exam'
-    },
-    {
-      $project: {
-        weight: 1,
-        weightPercentage: 1,
-        id: 1,
-        label: '$exam.label',
-        slug: '$exam.slug',
-        grade: {
-          $floor: {
-            $multiply: [
-              {
-                $divide: [
-                  '$score',
-                  {
-                    $size: '$exam.examItems'
-                  }
-                ]
-              },
-              100
-            ]
-          }
+  const examsInCourse = await Exam.find({
+    course: course._id
+  })
+
+  const grades: CourseGrades = {
+    courseId: course._id,
+    courseName: course.name,
+    exams: await Promise.all(
+      examsInCourse.map(async exam => {
+        const examAttempts = await ExamAttempt.find({
+          exam: exam.id,
+          user: user.id
+        })
+          .sort('-score')
+          .limit(1)
+
+        const highestScore = examAttempts[0]?.score ?? 0
+
+        return {
+          slug: exam.slug,
+          weight,
+          label: exam.label,
+          id: exam.id,
+          weightPercentage,
+          grade: Math.floor((highestScore / exam.examItems.length) * 100)
         }
-      }
-    }
-  ])
-
-  // grades.exams.push(...attempts.map(({ exam, score, examId }) => ({
-  //   weight,
-  //   label: exam[0].label,
-  //   id: examId,
-  //   weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
-  //   grade: Math.floor(score / exam[0].examItems.length * 100)
-  // })))
-
-  // for (const exam of examsInCourse) {
-  //   const examAttempts = await ExamAttempt.find({ exam: exam.id, user: user.id }).sort('-score').limit(1)
-
-  // const highestScore = examAttempts[0]?.score ?? 0
-
-  //   grades.exams.push({
-  //     weight,
-  //     label: exam.label,
-  //     id: exam.id,
-  //     weightPercentage: (weight * 100).toLocaleString('en-US', { maximumFractionDigits: 1 }),
-  //     grade: Math.floor(highestScore / exam.examItems.length * 100)
-  //   })
-  // }
+      })
+    ),
+    courseTotal: 0,
+    courseSlug: course.slug
+  }
 
   grades.courseTotal = Math.round(
     grades.exams.map(exam => exam.grade * weight).reduce((a, b) => a + b, 0)
