@@ -93,7 +93,9 @@ examAttemptsRouter.get('/', async (_req, res) => {
   res.json(examAttempts)
 })
 
-examAttemptsRouter.get('/:id', async (req, res) => {
+examAttemptsRouter.get('/:id', authenticate, async (req, res) => {
+  const user = req.user
+
   const status = req.query.status
 
   if (status !== undefined) {
@@ -107,6 +109,7 @@ examAttemptsRouter.get('/:id', async (req, res) => {
     if (isAttemptStatus(status)) {
       const examAttemptByStatus = await ExamAttempt.findOne({
         _id: req.params.id,
+        user: user?._id,
         status
       }).populate({
         path: 'exam',
