@@ -22,7 +22,14 @@ examResultsRouter.post('/', authenticate, async (req, res) => {
         examItem.questionType !== 'multiple answers' &&
         typeof answer.answer === 'string'
       ) {
-        points = examItem.answer?.[0] === answer.answer ? 1 : 0
+        if (examItem.questionType === 'text' && !examItem.caseSensitive) {
+          points =
+            examItem.answer?.[0].toLowerCase() === answer.answer.toLowerCase()
+              ? 1
+              : 0
+        } else {
+          points = examItem.answer?.[0] === answer.answer ? 1 : 0
+        }
       } else {
         points = examItem.answer.reduce(
           (_a, b) => (answer.answer.includes(b) ? 1 : 0),
