@@ -7,6 +7,42 @@ import slugify from 'slugify'
 
 const examsRouter = Router()
 
+examsRouter.put('/:id', authenticate, async (req, res) => {
+  const body = req.body
+
+  const user = req.user
+  const course = await Course.findById(body.courseId)
+
+  if (user?.role !== 'admin' && user?.id !== course?.coordinator?.toString()) {
+    res.status(401).json({
+      error: 'coordinator not assigned to course'
+    })
+    return
+  }
+
+  const updatedExam = await Exam.findByIdAndUpdate(
+    req.params.id,
+    {
+      label: body.label,
+      examItems: body.examItems,
+      length: body.length || body.examItems.length,
+      duration: body.duration,
+      random: body.random,
+      maxAttempts: body.maxAttempts,
+      week: body.week,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      slug: slugify(body.label, {
+        lower: true,
+        strict: true
+      })
+    },
+    { new: true, runValidators: true, context: 'query' }
+  )
+
+  res.json(await updatedExam?.populate('course').execPopulate())
+})
+
 examsRouter.post('/', authenticate, async (req, res) => {
   const body = req.body
 
