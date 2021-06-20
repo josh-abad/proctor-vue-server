@@ -17,6 +17,8 @@ usersRouter.post('/', async (req, res) => {
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(body.password, saltRounds)
 
+  const itFundamentals = await Course.findById('60ceb4e7ae6d7d2633e470e4')
+
   const user = new User({
     name: body.name,
     role: body.role || 'student',
@@ -26,7 +28,7 @@ usersRouter.post('/', async (req, res) => {
     avatarUrl: `https://gravatar.com/avatar/${md5(
       body.email.trim()
     )}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
-    courses: ['60ceb4e7ae6d7d2633e470e4'],
+    courses: itFundamentals ? [itFundamentals._id] : [],
     passwordHash
   })
 
@@ -38,6 +40,9 @@ usersRouter.post('/', async (req, res) => {
   const token = jwt.sign({ id: user._id, email: user.email }, config.SECRET, {
     expiresIn: '1h'
   })
+
+  itFundamentals?.studentsEnrolled.push(user._id)
+  await itFundamentals?.save()
 
   const savedUser = await user.save()
 
