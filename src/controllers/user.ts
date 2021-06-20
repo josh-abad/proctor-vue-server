@@ -156,30 +156,34 @@ userRouter.delete('/', authenticate, async (req, res) => {
 })
 
 // HACK: I need a way to get an exam along with its answers as a coordinator/admin
-userRouter.get('/:courseSlug/:examSlug', authenticate, async (req, res) => {
-  const user = req.user
+userRouter.get(
+  '/courses/:courseSlug/exams/:examSlug',
+  authenticate,
+  async (req, res) => {
+    const user = req.user
 
-  if (!user || user.role === 'student') {
-    res.sendStatus(401)
-    return
+    if (!user || user.role === 'student') {
+      res.sendStatus(401)
+      return
+    }
+
+    const course = await Course.findOne({ slug: req.params.courseSlug })
+    const exam = await Exam.findOne({
+      slug: req.params.examSlug,
+      course: course?._id
+    })
+      .select(
+        'examItems random label length duration maxAttempts week startDate endDate slug id'
+      )
+      .populate('course')
+
+    if (exam) {
+      res.json(exam)
+    } else {
+      res.sendStatus(404)
+    }
   }
-
-  const course = await Course.findOne({ slug: req.params.courseSlug })
-  const exam = await Exam.findOne({
-    slug: req.params.examSlug,
-    course: course?._id
-  })
-    .select(
-      'examItems random label length duration maxAttempts week startDate endDate slug id'
-    )
-    .populate('course')
-
-  if (exam) {
-    res.json(exam)
-  } else {
-    res.sendStatus(404)
-  }
-})
+)
 
 userRouter.get('/exams', authenticate, async (req, res) => {
   const user = req.user
