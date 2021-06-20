@@ -26,6 +26,7 @@ usersRouter.post('/', async (req, res) => {
     avatarUrl: `https://gravatar.com/avatar/${md5(
       body.email.trim()
     )}?d=https%3A%2F%2Ficon-library.com%2Fimages%2Fdefault-profile-icon%2Fdefault-profile-icon-16.jpg`,
+    courses: ['60ceb4e7ae6d7d2633e470e4'],
     passwordHash
   })
 
