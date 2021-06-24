@@ -211,9 +211,18 @@ userRouter.get('/upcoming-exams', authenticate, async (req, res) => {
       course: {
         $in: user.courses
       },
-      startDate: {
-        $gt: new Date()
-      }
+      $or: [
+        {
+          startDate: {
+            $exists: false
+          }
+        },
+        {
+          startDate: {
+            $gt: new Date()
+          }
+        }
+      ]
     })
       .sort('startDate')
       .populate('course')
@@ -232,12 +241,24 @@ userRouter.get('/open-exams', authenticate, async (req, res) => {
       course: {
         $in: user.courses
       },
-      startDate: {
-        $lte: new Date()
-      },
-      endDate: {
-        $gte: new Date()
-      }
+      $or: [
+        {
+          startDate: {
+            $lte: new Date()
+          },
+          endDate: {
+            $gte: new Date()
+          }
+        },
+        {
+          startDate: {
+            $exists: true
+          },
+          endDate: {
+            $exists: false
+          }
+        }
+      ]
     })
       .sort('endDate')
       .populate('course')

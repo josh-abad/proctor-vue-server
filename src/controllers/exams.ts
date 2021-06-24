@@ -43,6 +43,46 @@ examsRouter.put('/:id', authenticate, async (req, res) => {
   res.json(await updatedExam?.populate('course').execPopulate())
 })
 
+examsRouter.put('/:id/open', authenticate, async (req, res) => {
+  const user = req.user
+  if (!user || user.role === 'student') {
+    res.sendStatus(401)
+    return
+  }
+
+  const exam = await Exam.findByIdAndUpdate(
+    req.params.id,
+    { startDate: new Date() },
+    { new: true, runValidators: true, context: 'query' }
+  ).populate('course')
+
+  if (exam) {
+    res.json(exam)
+  } else {
+    res.sendStatus(404)
+  }
+})
+
+examsRouter.put('/:id/close', authenticate, async (req, res) => {
+  const user = req.user
+  if (!user || user.role === 'student') {
+    res.sendStatus(401)
+    return
+  }
+
+  const exam = await Exam.findByIdAndUpdate(
+    req.params.id,
+    { endDate: new Date() },
+    { new: true, runValidators: true, context: 'query' }
+  ).populate('course')
+
+  if (exam) {
+    res.json(exam)
+  } else {
+    res.sendStatus(404)
+  }
+})
+
 examsRouter.post('/', authenticate, async (req, res) => {
   const body = req.body
 

@@ -187,9 +187,18 @@ coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
   } else {
     const exams = await Exam.find({
       course: course._id,
-      startDate: {
-        $gt: new Date()
-      }
+      $or: [
+        {
+          startDate: {
+            $exists: false
+          }
+        },
+        {
+          startDate: {
+            $gt: new Date()
+          }
+        }
+      ]
     })
       .sort('startDate')
       .populate('course')

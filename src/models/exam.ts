@@ -55,8 +55,8 @@ export interface ExamDocument extends Document {
   course: string
   maxAttempts: number
   week: number
-  startDate: Date
-  endDate: Date
+  startDate?: Date
+  endDate?: Date
   slug: string
 }
 
@@ -93,11 +93,11 @@ const examSchema = new Schema({
   },
   startDate: {
     type: Date,
-    required: true
+    required: false
   },
   endDate: {
     type: Date,
-    required: true
+    required: false
   },
   slug: {
     type: String,
