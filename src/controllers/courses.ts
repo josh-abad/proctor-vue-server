@@ -5,6 +5,7 @@ import Exam from '@/models/exam'
 import User from '@/models/user'
 import ExamAttempt from '@/models/exam-attempt'
 import slugify from 'slugify'
+import { authenticate } from '@/utils/middleware'
 
 const coursesRouter = Router()
 
@@ -177,6 +178,54 @@ coursesRouter.get('/:slug/exams/week/:week', async (req, res) => {
       week: Number(req.params.week)
     }).populate('course')
     res.json(exams)
+  }
+})
+
+coursesRouter.delete(
+  '/:id/external-links/:externalLinkId',
+  authenticate,
+  async (req, res) => {
+    const user = req.user
+
+    if (!user || !['coordinator', 'admin'].includes(user.role)) {
+      res.sendStatus(401)
+    } else {
+      await Course.findByIdAndUpdate(req.params.id, {
+        $pull: {
+          externalLinks: {
+            _id: req.params.externalLinkId
+          }
+        }
+      })
+
+      res.sendStatus(200)
+    }
+  }
+)
+
+coursesRouter.put('/:id/external-links', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user || !['coordinator', 'admin'].includes(user.role)) {
+    res.sendStatus(401)
+  } else {
+    const body = req.body
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: {
+          externalLinks: {
+            url: body.url,
+            title: body.title,
+            description: body.description
+          }
+        }
+      },
+      { new: true }
+    )
+
+    res.json(updatedCourse)
   }
 })
 

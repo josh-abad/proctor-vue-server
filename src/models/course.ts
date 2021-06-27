@@ -11,7 +11,27 @@ export interface CourseDocument extends Document {
   studentsEnrolled: string[]
   weeks: number
   slug: string
+  externalLinks: {
+    title: string
+    url: string
+    description?: string
+  }[]
 }
+
+const externalLinkSchema = new Schema({
+  title: {
+    type: String,
+    required: true
+  },
+  url: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: false
+  }
+})
 
 const courseSchema = new Schema({
   name: {
@@ -47,7 +67,8 @@ const courseSchema = new Schema({
     type: String,
     required: true,
     unique: true
-  }
+  },
+  externalLinks: [externalLinkSchema]
 })
 
 courseSchema.plugin(uniqueValidator)
