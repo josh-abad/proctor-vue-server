@@ -52,7 +52,7 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
     startDate,
     endDate,
     exam: exam?._id,
-    examTotal: exam?.examItems.length,
+    examTotal: exam?.examItems.reduce((a, b) => a + b.points, 0),
     warnings: 0
   })
 

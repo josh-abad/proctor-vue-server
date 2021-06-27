@@ -11,6 +11,7 @@ interface ExamItem {
   questionType: 'text' | 'multiple choice' | 'multiple answers'
   shuffleChoices: boolean
   caseSensitive: boolean
+  points: number
 }
 
 const examItemSchema = new Schema({
@@ -43,6 +44,10 @@ const examItemSchema = new Schema({
   caseSensitive: {
     type: Boolean,
     default: true
+  },
+  points: {
+    type: Number,
+    default: 1
   }
 })
 
