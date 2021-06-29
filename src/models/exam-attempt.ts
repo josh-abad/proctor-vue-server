@@ -1,5 +1,18 @@
-import { AttemptStatus } from '@/types'
+import { Answer, AttemptStatus } from '@/types'
 import { Schema, Document, model } from 'mongoose'
+
+const answerSchema = new Schema({
+  examItem: {
+    type: String,
+    required: true
+  },
+  answer: [
+    {
+      type: String,
+      required: true
+    }
+  ]
+})
 
 export interface ExamAttemptDocument extends Document {
   exam: string
@@ -12,6 +25,8 @@ export interface ExamAttemptDocument extends Document {
   score: number
   examTotal: number
   warnings: number
+  answers: Answer[]
+  pendingGrade: boolean
 }
 
 const examAttemptSchema = new Schema({
@@ -55,7 +70,12 @@ const examAttemptSchema = new Schema({
   warnings: {
     type: Number,
     default: 0
-  }
+  },
+  pendingGrade: {
+    type: Boolean,
+    required: true
+  },
+  answers: [answerSchema]
 })
 
 examAttemptSchema.pre(/^find.*/, next => {

@@ -8,7 +8,7 @@ interface ExamItem {
   question: string
   choices: string[]
   answer?: string[]
-  questionType: 'text' | 'multiple choice' | 'multiple answers'
+  questionType: 'text' | 'multiple choice' | 'multiple answers' | 'essay'
   shuffleChoices: boolean
   caseSensitive: boolean
   points: number

@@ -3,6 +3,7 @@ import Exam from '@/models/exam'
 import ExamAttempt from '@/models/exam-attempt'
 import { authenticate } from '@/utils/middleware'
 import { AttemptStatus } from '@/types'
+import ExamResult, { Score } from '@/models/exam-result'
 
 const examAttemptsRouter = Router()
 
@@ -53,7 +54,8 @@ examAttemptsRouter.post('/', authenticate, async (req, res) => {
     endDate,
     exam: exam?._id,
     examTotal: exam?.examItems.reduce((a, b) => a + b.points, 0),
-    warnings: 0
+    warnings: 0,
+    pendingGrade: false
   })
 
   const savedExamAttempt = await examAttempt.save()
@@ -85,12 +87,68 @@ examAttemptsRouter.post('/:id/warnings', authenticate, async (req, res) => {
   res.sendStatus(200)
 })
 
+examAttemptsRouter.put('/:id/score', authenticate, async (req, res) => {
+  const body = req.body
+  const user = req.user
+
+  if (!user || user.role === 'student') {
+    res.sendStatus(401)
+  } else {
+    const scores: Score[] = body.scores
+    const updatedExamAttempt = await ExamAttempt.findByIdAndUpdate(
+      req.params.id,
+      {
+        $inc: {
+          score: scores.reduce((x, y) => x + y.points, 0)
+        },
+        pendingGrade: false
+      },
+      { new: true }
+    )
+    await ExamResult.findByIdAndUpdate(updatedExamAttempt?.examResult, {
+      $push: {
+        scores: {
+          $each: scores
+        }
+      }
+    })
+    res.json(updatedExamAttempt)
+  }
+})
+
 examAttemptsRouter.get('/', async (_req, res) => {
   const examAttempts = await ExamAttempt.find({}).populate({
     path: 'exam',
     populate: { path: 'course' }
   })
   res.json(examAttempts)
+})
+
+examAttemptsRouter.get('/pending', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user || user.role === 'student') {
+    res.sendStatus(401)
+  } else {
+    if (user.role === 'coordinator') {
+      const exams = await Exam.find({ course: { $in: user.courses } })
+      const pendingGradeAttemptsByCoordinator = await ExamAttempt.find({
+        exam: { $in: exams.map(exam => exam._id) }
+      }).populate({
+        path: 'exam user',
+        populate: { path: 'course' }
+      })
+      res.json(pendingGradeAttemptsByCoordinator)
+    } else {
+      const allPendingGradeAttempts = await ExamAttempt.find({
+        pendingGrade: true
+      }).populate({
+        path: 'exam user',
+        populate: { path: 'course' }
+      })
+      res.json(allPendingGradeAttempts)
+    }
+  }
 })
 
 examAttemptsRouter.get('/:id', authenticate, async (req, res) => {
@@ -112,7 +170,7 @@ examAttemptsRouter.get('/:id', authenticate, async (req, res) => {
         user: user?._id,
         status
       }).populate({
-        path: 'exam',
+        path: 'exam examResult user',
         populate: { path: 'course' }
       })
       if (examAttemptByStatus) {
@@ -128,7 +186,7 @@ examAttemptsRouter.get('/:id', authenticate, async (req, res) => {
   }
 
   const examAttempt = await ExamAttempt.findById(req.params.id).populate({
-    path: 'exam',
+    path: 'exam examResult user',
     populate: { path: 'course' }
   })
   if (examAttempt) {

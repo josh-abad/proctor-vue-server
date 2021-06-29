@@ -2,6 +2,11 @@ export type Role = 'student' | 'coordinator' | 'admin'
 
 export type AttemptStatus = 'in-progress' | 'completed' | 'expired'
 
+export interface Answer {
+  examItem: string
+  answer: string[]
+}
+
 export interface UserToken {
   email: string
   id: string

@@ -1,7 +1,7 @@
 import { Schema, Document, model } from 'mongoose'
 
 export interface Score {
-  question: string
+  examItem: string
   points: number
 }
 
@@ -13,7 +13,7 @@ export interface ExamResultDocument extends Document {
 }
 
 const scoreSchema = new Schema({
-  question: {
+  examItem: {
     type: String,
     required: true
   },

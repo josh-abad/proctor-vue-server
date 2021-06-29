@@ -114,6 +114,28 @@ coursesRouter.get('/:courseSlug/exams/:examSlug', async (req, res) => {
   }
 })
 
+coursesRouter.get('/:id/attempts', authenticate, async (req, res) => {
+  const user = req.user
+  if (!user || !['coordinator', 'admin'].includes(user.role)) {
+    res.sendStatus(401)
+  } else {
+    const course = await Course.findById(req.params.id)
+
+    if (!course) {
+      res.sendStatus(404)
+    } else {
+      if (user.role === 'coordinator' && course.coordinator !== user._id) {
+        res.sendStatus(401)
+      } else {
+        const attemptsInCourse = await ExamAttempt.find({
+          exam: { $in: course.exams }
+        }).populate({ path: 'exam user', populate: { path: 'course' } })
+        res.json(attemptsInCourse)
+      }
+    }
+  }
+})
+
 coursesRouter.get('/:slug/grades/:userId', async (req, res) => {
   const course = await Course.findOne({ slug: req.params.slug })
   const user = await User.findById(req.params.userId)

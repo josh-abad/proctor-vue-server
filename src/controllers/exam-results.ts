@@ -3,6 +3,7 @@ import Exam from '@/models/exam'
 import ExamResult, { Score } from '@/models/exam-result'
 import ExamAttempt from '@/models/exam-attempt'
 import { authenticate } from '@/utils/middleware'
+import { Answer } from '@/types'
 
 const examResultsRouter = Router()
 
@@ -10,25 +11,22 @@ examResultsRouter.post('/', authenticate, async (req, res) => {
   const body = req.body
 
   const exam = await Exam.findById(body.examId).select('examItems _id')
-  const answers: { id: string; answer: string[] | string }[] = body.answers
-  const scores: Score[] = []
+  const answers: Answer[] = body.answers
 
-  for (const answer of answers) {
-    const examItem = exam?.examItems.find(ei => ei.id === answer.id)
+  const scores: Score[] = answers.map(answer => {
+    const examItem = exam?.examItems.find(ei => ei.id === answer.examItem)
     let points = 0
-    if (examItem && examItem.answer) {
-      if (
-        examItem &&
-        examItem.questionType !== 'multiple answers' &&
-        typeof answer.answer === 'string'
-      ) {
+    if (examItem && examItem.answer && examItem.questionType !== 'essay') {
+      if (examItem && examItem.questionType !== 'multiple answers') {
         if (examItem.questionType === 'text' && !examItem.caseSensitive) {
           points =
-            examItem.answer?.[0].toLowerCase() === answer.answer.toLowerCase()
+            examItem.answer?.[0].toLowerCase() ===
+            answer.answer[0].toLowerCase()
               ? examItem.points
               : 0
         } else {
-          points = examItem.answer?.[0] === answer.answer ? examItem.points : 0
+          points =
+            examItem.answer?.[0] === answer.answer[0] ? examItem.points : 0
         }
       } else {
         points = examItem.answer.reduce(
@@ -37,34 +35,47 @@ examResultsRouter.post('/', authenticate, async (req, res) => {
         )
       }
     }
-    scores.push({
+    return {
       points,
-      question: examItem?.question as string
-    })
-  }
+      examItem: examItem?.id as string
+    }
+  })
 
   const user = req.user
-  const attempt = await ExamAttempt.findOne({
-    user: user?._id,
-    status: 'in-progress',
-    exam: exam?._id
-  }).populate({ path: 'exam', populate: { path: 'course' } })
 
   const examResult = new ExamResult({
     scores,
     user: user?._id,
     exam: exam?._id,
-    attempt: attempt?._id
+    attempt: body.attemptId
   })
 
-  if (attempt) {
-    attempt.examResult = examResult._id
-    attempt.status = 'completed'
-    attempt.submittedDate = new Date()
-    attempt.score = scores.reduce((x: number, y: Score) => x + y.points, 0)
-  }
+  const savedAttempt = await ExamAttempt.findOneAndUpdate(
+    {
+      user: user?._id,
+      status: 'in-progress',
+      exam: exam?._id
+    },
+    {
+      answers,
+      examResult: examResult._id,
+      status: 'completed',
+      submittedDate: new Date(),
+      score: scores.reduce((x: number, y: Score) => x + y.points, 0),
+      pendingGrade:
+        exam?.examItems.some(ei => {
+          return (
+            ei.questionType === 'essay' &&
+            answers.some(
+              answer =>
+                answer.examItem === ei.id && answer.answer[0]?.length > 0
+            )
+          )
+        }) ?? false
+    },
+    { new: true }
+  ).populate({ path: 'exam', populate: { path: 'course' } })
 
-  const savedAttempt = await attempt?.save()
   const savedExamResult = await examResult.save()
 
   res.json({
