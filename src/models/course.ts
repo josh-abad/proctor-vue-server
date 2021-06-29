@@ -82,7 +82,7 @@ courseSchema.post('findOneAndDelete', async (course: CourseDocument) => {
     ),
     User.updateOne(
       { _id: course.coordinator },
-      { $pull: { courses: course._id } }
+      { $pull: { courses: course._id, recentCourses: course._id } }
     )
   ])
 })

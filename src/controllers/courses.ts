@@ -124,7 +124,10 @@ coursesRouter.get('/:id/attempts', authenticate, async (req, res) => {
     if (!course) {
       res.sendStatus(404)
     } else {
-      if (user.role === 'coordinator' && course.coordinator !== user._id) {
+      if (
+        user.role === 'coordinator' &&
+        course.coordinator.toString() !== user._id.toString()
+      ) {
         res.sendStatus(401)
       } else {
         const attemptsInCourse = await ExamAttempt.find({
