@@ -1,3 +1,4 @@
+import User from '@/models/user'
 import Course from '@/models/course'
 import Exam from '@/models/exam'
 import { Router } from 'express'
@@ -6,6 +7,7 @@ import config from '@/utils/config'
 import { authenticate } from '../utils/middleware'
 import ExamAttempt from '@/models/exam-attempt'
 import { CourseGrades } from '@/types'
+import bcrypt from 'bcrypt'
 
 const userRouter = Router()
 
@@ -349,6 +351,37 @@ userRouter.post('/deactivate', authenticate, async (req, res) => {
     res.sendStatus(200)
   } else {
     res.sendStatus(404)
+  }
+})
+
+userRouter.put('/password', authenticate, async (req, res) => {
+  const user = await User.findById(req.user?._id).select('passwordHash')
+
+  const body = req.body
+
+  const passwordCorrect =
+    user !== null && user.passwordHash
+      ? await bcrypt.compare(body.oldPassword, user.passwordHash)
+      : false
+
+  if (!user || !passwordCorrect) {
+    res.status(401).json({
+      error: 'Old password is incorrect'
+    })
+  } else if (!body.newPassword) {
+    res.status(400).json({
+      error: 'No new password'
+    })
+  } else {
+    const saltRounds = 10
+    const newPasswordHash = await bcrypt.hash(body.newPassword, saltRounds)
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { passwordHash: newPasswordHash },
+      { new: true }
+    )
+    res.json(updatedUser)
   }
 })
 
