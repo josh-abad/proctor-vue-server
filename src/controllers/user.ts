@@ -8,6 +8,8 @@ import { authenticate } from '../utils/middleware'
 import ExamAttempt from '@/models/exam-attempt'
 import { CourseGrades } from '@/types'
 import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import { sendResetPasswordEmail } from './email-helper'
 
 const userRouter = Router()
 
@@ -352,6 +354,62 @@ userRouter.post('/deactivate', authenticate, async (req, res) => {
   } else {
     res.sendStatus(404)
   }
+})
+
+userRouter.post('/forgot-password', async (req, res) => {
+  const body = req.body
+
+  const user = await User.findOne({ email: body.email })
+
+  if (!user) {
+    res.status(404).json({
+      error: 'User not found'
+    })
+    return
+  }
+
+  const userForToken = {
+    email: user.email,
+    id: user._id,
+    role: user.role
+  }
+
+  const token = jwt.sign(userForToken, config.SECRET as string, {
+    expiresIn: '1 hour'
+  })
+
+  await sendResetPasswordEmail(user.email, token)
+
+  res.status(200).end()
+})
+
+userRouter.post('/reset-password', authenticate, async (req, res) => {
+  const user = req.user
+
+  if (!user) {
+    res.status(404).json({
+      error: 'User not found'
+    })
+    return
+  }
+
+  const body = req.body
+
+  if (!body.newPassword) {
+    res.status(400).json({
+      error: 'No new password'
+    })
+    return
+  }
+
+  const saltRounds = 10
+  const newPasswordHash = await bcrypt.hash(body.newPassword, saltRounds)
+  const updatedUser = await User.findByIdAndUpdate(
+    user._id,
+    { passwordHash: newPasswordHash },
+    { new: true }
+  )
+  res.json(updatedUser)
 })
 
 userRouter.put('/password', authenticate, async (req, res) => {

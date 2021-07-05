@@ -30,6 +30,24 @@ const createEmailTransporter = async (): Promise<Mail> => {
   } as SMTPTransport.Options)
 }
 
+export const sendResetPasswordEmail = async (
+  to: string,
+  token: string
+): Promise<void> => {
+  const transporter = await createEmailTransporter()
+  const mailOptions: Mail.Options = {
+    to,
+    from: 'proctor.vue@gmail.com',
+    subject: 'Proctor Vue Password Reset',
+    text: `Go to https://www.proctorvue.live/reset-password/${token} to reset your password.`,
+    html: `Click <a href="https://www.proctorvue.live/reset-password/${token}">here</a> to reset your password.`
+  }
+  transporter.sendMail(mailOptions, (error, response) => {
+    error ? logger.error(error.message) : logger.info(response)
+    transporter.close()
+  })
+}
+
 export const sendVerificationEmail = async (
   to: string,
   token: string
