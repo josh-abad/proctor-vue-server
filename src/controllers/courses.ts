@@ -322,7 +322,7 @@ coursesRouter.delete('/:courseSlug/students/:studentId', async (req, res) => {
       },
       {
         $pull: {
-          courses: req.params.courseId
+          courses: course._id
         }
       }
     )
