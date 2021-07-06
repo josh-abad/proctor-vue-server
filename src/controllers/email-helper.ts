@@ -37,7 +37,10 @@ export const sendResetPasswordEmail = async (
   to: string,
   token: string
 ): Promise<void> => {
-  const filePath = path.join(__dirname, '../emails/password-reset.handlebars')
+  const filePath = path.join(
+    __dirname,
+    '../../emails/password-reset.handlebars'
+  )
   const source = fs.readFileSync(filePath, 'utf-8').toString()
   const template = handlebars.compile(source)
   const html = template({ token })
@@ -60,7 +63,7 @@ export const sendVerificationEmail = async (
   to: string,
   token: string
 ): Promise<void> => {
-  const filePath = path.join(__dirname, '../emails/verification.handlebars')
+  const filePath = path.join(__dirname, '../../emails/verification.handlebars')
   const source = fs.readFileSync(filePath, 'utf-8').toString()
   const template = handlebars.compile(source)
   const html = template({ token })
