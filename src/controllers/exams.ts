@@ -140,51 +140,6 @@ examsRouter.get('/', async (_req, res) => {
   res.json(exam)
 })
 
-examsRouter.get('/:id', async (req, res) => {
-  const exam = await Exam.findById(req.params.id).populate('course')
-  if (exam) {
-    res.json(exam)
-  } else {
-    res.status(404).end()
-  }
-})
-
-examsRouter.get('/:exam/taken-by/:user', async (req, res) => {
-  const { exam, user } = req.params
-  const count = await ExamAttempt.countDocuments({ exam, user })
-  res.json({ isTaken: count > 0 })
-})
-
-examsRouter.get('/:exam/attempts/:user', async (req, res) => {
-  const { exam, user } = req.params
-  const examAttemptsByUser = await ExamAttempt.find({ exam, user }).populate({
-    path: 'exam',
-    populate: { path: 'course' }
-  })
-  res.json(examAttemptsByUser)
-})
-
-examsRouter.put('/:id', async (req, res) => {
-  const body = req.body
-
-  const exam = {
-    label: body.label,
-    questions: body.questions,
-    length: body.length || body.questions.length,
-    duration: body.duration,
-    random: body.random,
-    course: body.courseId,
-    maxAttempts: body.maxAttempts
-  }
-
-  const updatedExam = await Exam.findByIdAndUpdate(req.params.id, exam, {
-    new: true,
-    runValidators: true,
-    context: 'query'
-  })
-  res.json(updatedExam)
-})
-
 examsRouter.delete('/:id', async (req, res) => {
   await Exam.findByIdAndDelete(req.params.id)
   res.status(204).end()

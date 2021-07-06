@@ -196,27 +196,6 @@ examAttemptsRouter.get('/:id', authenticate, async (req, res) => {
   }
 })
 
-examAttemptsRouter.put('/:id', async (req, res) => {
-  const body = req.body
-
-  const examAttempt = {
-    status: body.status,
-    examType: body.examType,
-    courseId: body.courseId
-  }
-
-  const updatedExamItem = await ExamAttempt.findByIdAndUpdate(
-    req.params.id,
-    examAttempt,
-    {
-      new: true,
-      runValidators: true,
-      context: 'query'
-    }
-  )
-  res.json(updatedExamItem)
-})
-
 examAttemptsRouter.delete('/:id', async (req, res) => {
   await ExamAttempt.findByIdAndDelete(req.params.id)
   res.status(204).end()

@@ -65,19 +65,6 @@ usersRouter.get('/students', async (_req, res) => {
   res.json(students)
 })
 
-usersRouter.get('/students/:id', async (req, res) => {
-  const user = await User.findOne({
-    active: true,
-    role: 'student',
-    _id: req.params.id
-  }).populate('courses')
-  if (user) {
-    res.json(user)
-  } else {
-    res.status(404).end()
-  }
-})
-
 usersRouter.get('/coordinators', async (_req, res) => {
   const coordinators = await User.find({ active: true, role: 'coordinator' })
     .populate('courses')
@@ -89,38 +76,6 @@ usersRouter.get('/:id', async (req, res) => {
   const user = await User.findById(req.params.id).populate('courses')
   if (user) {
     res.json(user)
-  } else {
-    res.status(404).end()
-  }
-})
-
-usersRouter.get('/:id/courses', async (req, res) => {
-  const user = await User.findById(req.params.id)
-  if (user) {
-    const courses = await Course.find({ _id: { $in: user.courses } }).sort(
-      'name'
-    )
-    const coursesWithProgress = courses.map(async course => {
-      const uniqueExamsTakenByUser = await ExamAttempt.distinct('exam', {
-        exam: {
-          $in: course.exams
-        },
-        user: user._id,
-        score: { $gt: 0 }
-      })
-
-      const percentage =
-        uniqueExamsTakenByUser.length === 0
-          ? 0
-          : Math.floor(
-              (uniqueExamsTakenByUser.length / course.exams.length) * 100
-            )
-      return {
-        ...course.toJSON(),
-        progress: percentage
-      }
-    })
-    res.json(await Promise.all(coursesWithProgress))
   } else {
     res.status(404).end()
   }
@@ -148,16 +103,6 @@ usersRouter.put('/:id', async (req, res) => {
 
     const updatedUser = await oldUser.save()
     res.json(updatedUser.toJSON())
-  }
-})
-
-usersRouter.get('/:id/recent-courses', async (req, res) => {
-  const limit = req.query.limit ? Number(req.query.limit) : 5
-  const user = await User.findById(req.params.id).populate('recentCourses')
-  if (user) {
-    res.json([...user.recentCourses].reverse().slice(0, limit))
-  } else {
-    res.status(404).end()
   }
 })
 

@@ -91,11 +91,6 @@ coursesRouter.get('/:slug/progress/:user', async (req, res) => {
   res.json({ percentage })
 })
 
-coursesRouter.get('/:id/exams', async (req, res) => {
-  const exams = await Exam.find({ course: req.params.id }).populate('course')
-  res.json(exams)
-})
-
 coursesRouter.get('/:courseSlug/exams/:examSlug', async (req, res) => {
   const course = await Course.findOne({ slug: req.params.courseSlug })
   if (course) {
@@ -193,19 +188,6 @@ coursesRouter.get('/:slug/grades/:userId', async (req, res) => {
   res.json(grades)
 })
 
-coursesRouter.get('/:slug/exams/week/:week', async (req, res) => {
-  const course = await Course.findOne({ slug: req.params.slug })
-  if (!course) {
-    res.sendStatus(404)
-  } else {
-    const exams = await Exam.find({
-      course: course._id,
-      week: Number(req.params.week)
-    }).populate('course')
-    res.json(exams)
-  }
-})
-
 coursesRouter.delete(
   '/:id/external-links/:externalLinkId',
   authenticate,
@@ -291,42 +273,6 @@ coursesRouter.put('/:courseId', async (req, res) => {
     return
   }
 
-  // If req contains a userId, it's a req for enrollment for one student
-  const userId = body.userId
-  if (userId) {
-    const user = await User.findById(userId)
-
-    if (!user) {
-      res.status(401).json({
-        error: 'User not found.'
-      })
-      return
-    }
-
-    if (user.role !== 'student') {
-      res.status(401).json({
-        error: 'User is not a student.'
-      })
-      return
-    }
-
-    if (user.courses.includes(course.id)) {
-      res.status(401).json({
-        error: 'Student is already enrolled in course.'
-      })
-      return
-    }
-
-    user.courses.push(course._id)
-    await user.save()
-
-    course.studentsEnrolled.push(user._id)
-    const updatedCourse = await course.save()
-    res.json(await updatedCourse.populate('coordinator').execPopulate())
-    return
-  }
-
-  // If req contains a userIds, it's a req for enrollment for single/multiple student(s)
   const userIds = body.userIds
   if (userIds) {
     const users = await User.find({ _id: { $in: userIds }, role: 'student' })

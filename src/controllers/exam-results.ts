@@ -84,23 +84,4 @@ examResultsRouter.post('/', authenticate, async (req, res) => {
   })
 })
 
-examResultsRouter.get('/', async (_req, res) => {
-  const examResult = await ExamResult.find({}).populate('user')
-  res.json(examResult)
-})
-
-examResultsRouter.get('/:id', async (req, res) => {
-  const examResult = await ExamResult.findById(req.params.id).populate('user')
-  if (examResult) {
-    res.json(examResult)
-  } else {
-    res.status(404).end()
-  }
-})
-
-examResultsRouter.delete('/:id', async (req, res) => {
-  await ExamResult.findByIdAndDelete(req.params.id)
-  res.status(204).end()
-})
-
 export default examResultsRouter
