@@ -9,34 +9,38 @@ import { authenticate } from '@/utils/middleware'
 
 const coursesRouter = Router()
 
-coursesRouter.post('/', async (req, res) => {
-  const body = req.body
+coursesRouter.post(
+  '/',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    const body = req.body
 
-  const coordinator = await User.findById(body.coordinatorId)
-  if (coordinator?.role !== 'coordinator') {
-    res.status(401).send({
-      error: 'invalid coordinator id'
+    const coordinator = await User.findById(body.coordinatorId)
+    if (coordinator?.role !== 'coordinator') {
+      res.status(401).send({
+        error: 'invalid coordinator id'
+      })
+      return
+    }
+
+    const course = new Course({
+      name: body.name,
+      description: body.description,
+      coordinator: coordinator._id,
+      weeks: body.weeks,
+      slug: slugify(body.name, {
+        lower: true,
+        strict: true
+      })
     })
-    return
+
+    coordinator.courses.push(course._id)
+    await coordinator.save()
+
+    const savedCourse = await course.save()
+    res.json(await savedCourse.populate('coordinator').execPopulate())
   }
-
-  const course = new Course({
-    name: body.name,
-    description: body.description,
-    coordinator: coordinator._id,
-    weeks: body.weeks,
-    slug: slugify(body.name, {
-      lower: true,
-      strict: true
-    })
-  })
-
-  coordinator.courses.push(course._id)
-  await coordinator.save()
-
-  const savedCourse = await course.save()
-  res.json(await savedCourse.populate('coordinator').execPopulate())
-})
+)
 
 coursesRouter.get('/', async (_req, res) => {
   const courses = await Course.find({}).sort('name').populate('coordinator')
@@ -54,18 +58,22 @@ coursesRouter.get('/:slug', async (req, res) => {
   }
 })
 
-coursesRouter.get('/:slug/students', async (req, res) => {
-  const course = await Course.findOne({ slug: req.params.slug })
-  if (course) {
-    const students = await User.find({
-      active: true,
-      _id: { $in: course.studentsEnrolled }
-    }).populate('courses')
-    res.json(students)
-  } else {
-    res.status(404).end()
+coursesRouter.get(
+  '/:slug/students',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    const course = await Course.findOne({ slug: req.params.slug })
+    if (course) {
+      const students = await User.find({
+        active: true,
+        _id: { $in: course.studentsEnrolled }
+      }).populate('courses')
+      res.json(students)
+    } else {
+      res.status(404).end()
+    }
   }
-})
+)
 
 coursesRouter.get('/:slug/progress/:user', async (req, res) => {
   const course = await Course.findOne({ slug: req.params.slug })
@@ -109,113 +117,100 @@ coursesRouter.get('/:courseSlug/exams/:examSlug', async (req, res) => {
   }
 })
 
-coursesRouter.get('/:id/attempts', authenticate, async (req, res) => {
-  const user = req.user
-  if (!user || !['coordinator', 'admin'].includes(user.role)) {
-    res.sendStatus(401)
-  } else {
+coursesRouter.get(
+  '/:id/attempts',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
     const course = await Course.findById(req.params.id)
-
     if (!course) {
       res.sendStatus(404)
     } else {
-      if (
-        user.role === 'coordinator' &&
-        course.coordinator.toString() !== user._id.toString()
-      ) {
-        res.sendStatus(401)
-      } else {
-        const attemptsInCourse = await ExamAttempt.find({
-          exam: { $in: course.exams }
-        }).populate({ path: 'exam user', populate: { path: 'course' } })
-        res.json(attemptsInCourse)
-      }
-    }
-  }
-})
-
-coursesRouter.get('/:slug/grades/:userId', async (req, res) => {
-  const course = await Course.findOne({ slug: req.params.slug })
-  const user = await User.findById(req.params.userId)
-
-  if (!course || !user) {
-    res.status(404).end()
-    return
-  }
-
-  // TODO: allow custom weight
-  const weight = 1 / course.exams.length
-  const weightPercentage = (weight * 100).toLocaleString('en-US', {
-    maximumFractionDigits: 1
-  })
-
-  const examsInCourse = await Exam.find({
-    course: course._id
-  })
-
-  const grades: CourseGrades = {
-    courseId: course._id,
-    courseName: course.name,
-    exams: await Promise.all(
-      examsInCourse.map(async exam => {
-        const examAttempts = await ExamAttempt.find({
-          exam: exam.id,
-          user: user.id
-        })
-          .sort('-score')
-          .limit(1)
-
-        const highestScore = examAttempts[0]?.score ?? 0
-
-        return {
-          slug: exam.slug,
-          weight,
-          label: exam.label,
-          id: exam.id,
-          weightPercentage,
-          grade: Math.floor((highestScore / exam.examItems.length) * 100)
-        }
-      })
-    ),
-    courseTotal: 0,
-    courseSlug: course.slug
-  }
-
-  grades.courseTotal = Math.round(
-    grades.exams.map(exam => exam.grade * weight).reduce((a, b) => a + b, 0)
-  )
-
-  res.json(grades)
-})
-
-coursesRouter.delete(
-  '/:id/external-links/:externalLinkId',
-  authenticate,
-  async (req, res) => {
-    const user = req.user
-
-    if (!user || !['coordinator', 'admin'].includes(user.role)) {
-      res.sendStatus(401)
-    } else {
-      await Course.findByIdAndUpdate(req.params.id, {
-        $pull: {
-          externalLinks: {
-            _id: req.params.externalLinkId
-          }
-        }
-      })
-
-      res.sendStatus(200)
+      const attemptsInCourse = await ExamAttempt.find({
+        exam: { $in: course.exams }
+      }).populate({ path: 'exam user', populate: { path: 'course' } })
+      res.json(attemptsInCourse)
     }
   }
 )
 
-coursesRouter.put('/:id/external-links', authenticate, async (req, res) => {
-  const user = req.user
+coursesRouter.get(
+  '/:slug/grades/:userId',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    const course = await Course.findOne({ slug: req.params.slug })
+    const user = await User.findById(req.params.userId)
 
-  if (!user || !['coordinator', 'admin'].includes(user.role)) {
-    res.sendStatus(401)
-  } else {
+    if (!course || !user) {
+      res.status(404).end()
+      return
+    }
+
+    // TODO: allow custom weight
+    const weight = 1 / course.exams.length
+    const weightPercentage = (weight * 100).toLocaleString('en-US', {
+      maximumFractionDigits: 1
+    })
+
+    const examsInCourse = await Exam.find({
+      course: course._id
+    })
+
+    const grades: CourseGrades = {
+      courseId: course._id,
+      courseName: course.name,
+      exams: await Promise.all(
+        examsInCourse.map(async exam => {
+          const examAttempts = await ExamAttempt.find({
+            exam: exam.id,
+            user: user.id
+          })
+            .sort('-score')
+            .limit(1)
+
+          const highestScore = examAttempts[0]?.score ?? 0
+
+          return {
+            slug: exam.slug,
+            weight,
+            label: exam.label,
+            id: exam.id,
+            weightPercentage,
+            grade: Math.floor((highestScore / exam.examItems.length) * 100)
+          }
+        })
+      ),
+      courseTotal: 0,
+      courseSlug: course.slug
+    }
+
+    grades.courseTotal = Math.round(
+      grades.exams.map(exam => exam.grade * weight).reduce((a, b) => a + b, 0)
+    )
+
+    res.json(grades)
+  }
+)
+
+coursesRouter.delete(
+  '/:id/external-links/:externalLinkId',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    await Course.findByIdAndUpdate(req.params.id, {
+      $pull: {
+        externalLinks: {
+          _id: req.params.externalLinkId
+        }
+      }
+    })
+
+    res.sendStatus(200)
+  }
+)
+
+coursesRouter.put(
+  '/:id/external-links',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
     const body = req.body
 
     const updatedCourse = await Course.findByIdAndUpdate(
@@ -234,7 +229,7 @@ coursesRouter.put('/:id/external-links', authenticate, async (req, res) => {
 
     res.json(updatedCourse)
   }
-})
+)
 
 coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
   const course = await Course.findById(req.params.id)
@@ -263,71 +258,83 @@ coursesRouter.get('/:id/upcoming-exams', async (req, res) => {
   }
 })
 
-coursesRouter.put('/:courseId', async (req, res) => {
-  const body = req.body
-  const course = await Course.findById(req.params.courseId)
+coursesRouter.put(
+  '/:courseId',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    const body = req.body
+    const course = await Course.findById(req.params.courseId)
 
-  // Course doesn't exist
-  if (!course) {
-    res.status(404).end()
-    return
-  }
-
-  const userIds = body.userIds
-  if (userIds) {
-    const users = await User.find({ _id: { $in: userIds }, role: 'student' })
-
-    if (!users) {
-      res.status(401).json({
-        error: 'Users not found.'
-      })
+    // Course doesn't exist
+    if (!course) {
+      res.status(404).end()
       return
     }
 
-    const promiseArray = users.map(user => {
-      user.courses.push(course._id)
-      course.studentsEnrolled.push(user._id)
-      return user.save()
-    })
-    await Promise.all(promiseArray)
+    const userIds = body.userIds
+    if (userIds) {
+      const users = await User.find({ _id: { $in: userIds }, role: 'student' })
 
-    const updatedCourse = await course.save()
-    res.json(await updatedCourse.populate('coordinator').execPopulate())
+      if (!users) {
+        res.status(401).json({
+          error: 'Users not found.'
+        })
+        return
+      }
+
+      const promiseArray = users.map(user => {
+        user.courses.push(course._id)
+        course.studentsEnrolled.push(user._id)
+        return user.save()
+      })
+      await Promise.all(promiseArray)
+
+      const updatedCourse = await course.save()
+      res.json(await updatedCourse.populate('coordinator').execPopulate())
+    }
   }
-})
+)
 
-coursesRouter.delete('/:slug', async (req, res) => {
-  await Course.findOneAndDelete({ slug: req.params.slug })
-  res.status(204).end()
-})
-
-coursesRouter.delete('/:courseSlug/students/:studentId', async (req, res) => {
-  const course = await Course.findOne({ slug: req.params.courseSlug })
-  if (!course) {
-    res.sendStatus(404)
-  } else {
-    await Course.updateOne(
-      {
-        _id: course._id
-      },
-      {
-        $pull: {
-          studentsEnrolled: req.params.studentId
-        }
-      }
-    )
-    await User.updateOne(
-      {
-        _id: req.params.studentId
-      },
-      {
-        $pull: {
-          courses: course._id
-        }
-      }
-    )
+coursesRouter.delete(
+  '/:slug',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    await Course.findOneAndDelete({ slug: req.params.slug })
     res.status(204).end()
   }
-})
+)
+
+coursesRouter.delete(
+  '/:courseSlug/students/:studentId',
+  authenticate('coordinator', 'admin'),
+  async (req, res) => {
+    const course = await Course.findOne({ slug: req.params.courseSlug })
+    if (!course) {
+      res.sendStatus(404)
+    } else {
+      await Course.updateOne(
+        {
+          _id: course._id
+        },
+        {
+          $pull: {
+            studentsEnrolled: req.params.studentId
+          }
+        }
+      )
+      await User.updateOne(
+        {
+          _id: req.params.studentId
+        },
+        {
+          $pull: {
+            courses: course._id
+          }
+        }
+      )
+      res.status(204).end()
+    }
+  }
+)
 
 export default coursesRouter

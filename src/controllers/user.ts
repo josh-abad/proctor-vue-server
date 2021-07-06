@@ -13,7 +13,7 @@ import { sendResetPasswordEmail } from './email-helper'
 
 const userRouter = Router()
 
-userRouter.get('/', authenticate, async (req, res) => {
+userRouter.get('/', authenticate(), async (req, res) => {
   const user = req.user
 
   if (user) {
@@ -23,7 +23,7 @@ userRouter.get('/', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/courses', authenticate, async (req, res) => {
+userRouter.get('/courses', authenticate(), async (req, res) => {
   const user = req.user
   if (user) {
     const courses =
@@ -56,7 +56,7 @@ userRouter.get('/courses', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/exams-taken/:id', authenticate, async (req, res) => {
+userRouter.get('/exams-taken/:id', authenticate(), async (req, res) => {
   const user = req.user
   const course = await Course.findById(req.params.id)
 
@@ -78,7 +78,7 @@ userRouter.get('/exams-taken/:id', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/attempts', authenticate, async (req, res) => {
+userRouter.get('/attempts', authenticate(), async (req, res) => {
   const limit = req.query.limit ? Number(req.query.limit) : 0
   const examId = req.query.exam
   const user = req.user
@@ -113,7 +113,7 @@ userRouter.get('/attempts', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/recent-courses', authenticate, async (req, res) => {
+userRouter.get('/recent-courses', authenticate(), async (req, res) => {
   const limit = req.query.limit ? Number(req.query.limit) : 5
   const user = req.user
   if (user) {
@@ -126,7 +126,7 @@ userRouter.get('/recent-courses', authenticate, async (req, res) => {
   }
 })
 
-userRouter.put('/recent-courses', authenticate, async (req, res) => {
+userRouter.put('/recent-courses', authenticate(), async (req, res) => {
   const body = req.body
 
   const user = req.user
@@ -153,7 +153,7 @@ userRouter.put('/recent-courses', authenticate, async (req, res) => {
   }
 })
 
-userRouter.delete('/', authenticate, async (req, res) => {
+userRouter.delete('/', authenticate(), async (req, res) => {
   const user = req.user
   await user?.delete()
   res.sendStatus(204)
@@ -162,12 +162,12 @@ userRouter.delete('/', authenticate, async (req, res) => {
 // HACK: I need a way to get an exam along with its answers as a coordinator/admin
 userRouter.get(
   '/courses/:courseSlug/exams/:examSlug',
-  authenticate,
+  authenticate('coordinator', 'admin'),
   async (req, res) => {
     const user = req.user
 
-    if (!user || user.role === 'student') {
-      res.sendStatus(401)
+    if (!user) {
+      res.sendStatus(404)
       return
     }
 
@@ -189,7 +189,7 @@ userRouter.get(
   }
 )
 
-userRouter.get('/exams', authenticate, async (req, res) => {
+userRouter.get('/exams', authenticate(), async (req, res) => {
   const user = req.user
 
   if (!user) {
@@ -205,7 +205,7 @@ userRouter.get('/exams', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/upcoming-exams', authenticate, async (req, res) => {
+userRouter.get('/upcoming-exams', authenticate(), async (req, res) => {
   const user = req.user
 
   if (!user) {
@@ -235,7 +235,7 @@ userRouter.get('/upcoming-exams', authenticate, async (req, res) => {
   }
 })
 
-userRouter.get('/open-exams', authenticate, async (req, res) => {
+userRouter.get('/open-exams', authenticate(), async (req, res) => {
   const user = req.user
 
   if (!user) {
@@ -273,7 +273,7 @@ userRouter.get('/open-exams', authenticate, async (req, res) => {
 
 userRouter.post(
   '/reference-image',
-  authenticate,
+  authenticate(),
   upload.single('image'),
   async (req, res) => {
     const filename = (req.file as Express.MulterS3.File).key
@@ -290,7 +290,7 @@ userRouter.post(
   }
 )
 
-userRouter.get('/grades/:slug', authenticate, async (req, res) => {
+userRouter.get('/grades/:slug', authenticate(), async (req, res) => {
   const user = req.user
   const course = await Course.findOne({ slug: req.params.slug })
 
@@ -344,7 +344,7 @@ userRouter.get('/grades/:slug', authenticate, async (req, res) => {
   res.json(grades)
 })
 
-userRouter.post('/deactivate', authenticate, async (req, res) => {
+userRouter.post('/deactivate', authenticate(), async (req, res) => {
   const user = req.user
 
   if (user) {
@@ -383,7 +383,7 @@ userRouter.post('/forgot-password', async (req, res) => {
   res.status(200).end()
 })
 
-userRouter.post('/reset-password', authenticate, async (req, res) => {
+userRouter.post('/reset-password', authenticate(), async (req, res) => {
   const user = req.user
 
   if (!user) {
@@ -412,7 +412,7 @@ userRouter.post('/reset-password', authenticate, async (req, res) => {
   res.json(updatedUser)
 })
 
-userRouter.put('/password', authenticate, async (req, res) => {
+userRouter.put('/password', authenticate(), async (req, res) => {
   const user = await User.findById(req.user?._id).select('passwordHash')
 
   const body = req.body

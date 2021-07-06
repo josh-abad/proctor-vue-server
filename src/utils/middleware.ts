@@ -2,28 +2,43 @@ import { NextFunction, Request, RequestHandler, Response } from 'express'
 import logger from './logger'
 import config from './config'
 import jwt from 'jsonwebtoken'
-import { UserToken } from '@/types'
+import { Role, UserToken } from '@/types'
 import User from '@/models/user'
 
-export const authenticate: RequestHandler = async (
-  req,
-  res,
-  next
-): Promise<void> => {
-  const authorization = req.get('authorization')
-  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
-    const token = authorization.substring(7)
+/**
+ * Authenticate incoming requests by validating the token in the authorization
+ * header. Pass in user roles to restrict access to certain roles. Leave it
+ * empty otherwise.
+ *
+ * @param roles The roles allowed for authentication
+ * @returns A request handler, with a `req.user` object if authenticated
+ */
+export const authenticate = (...roles: Role[]): RequestHandler => {
+  return async (req, res, next) => {
+    const authorization = req.get('authorization')
+    if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+      const token = authorization.substring(7)
 
-    try {
-      const decodedToken = jwt.verify(token, config.SECRET as string)
-      req.user =
-        (await User.findById((decodedToken as UserToken).id)) ?? undefined
-      next()
-    } catch (error) {
-      res.sendStatus(401)
+      try {
+        const decodedToken = jwt.verify(token, config.SECRET as string)
+        req.user =
+          (await User.findById((decodedToken as UserToken).id)) ?? undefined
+
+        if (!req.user) throw 'User not found'
+
+        if (roles.length === 0 || roles.includes(req.user.role)) {
+          next()
+        } else {
+          throw 'You do not have sufficient permissions'
+        }
+      } catch (error) {
+        res.sendStatus(401)
+      }
+    } else {
+      res.status(401).json({
+        error: 'Authorization header is empty'
+      })
     }
-  } else {
-    res.sendStatus(401)
   }
 }
 

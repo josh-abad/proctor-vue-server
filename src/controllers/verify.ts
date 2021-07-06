@@ -3,7 +3,7 @@ import { authenticate } from '@/utils/middleware'
 
 const verifyRouter = Router()
 
-verifyRouter.post('/', authenticate, async (req, res) => {
+verifyRouter.post('/', authenticate(), async (req, res) => {
   const user = req.user
 
   if (!user) {

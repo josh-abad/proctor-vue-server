@@ -7,7 +7,7 @@ import { Answer } from '@/types'
 
 const examResultsRouter = Router()
 
-examResultsRouter.post('/', authenticate, async (req, res) => {
+examResultsRouter.post('/', authenticate(), async (req, res) => {
   const body = req.body
 
   const exam = await Exam.findById(body.examId).select('examItems _id')
