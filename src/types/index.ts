@@ -5,6 +5,7 @@ export type AttemptStatus = 'in-progress' | 'completed' | 'expired'
 export interface Answer {
   examItem: string
   answer: string[]
+  hasPlagiarism: boolean
 }
 
 export interface UserToken {

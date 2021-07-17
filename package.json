@@ -20,6 +20,7 @@
     "node": "14.5.0"
   },
   "dependencies": {
+    "@stewartmcgown/grammarly-api": "^1.1.2",
     "aws-sdk": "^2.830.0",
     "bcrypt": "^5.0.0",
     "compression": "^1.7.4",

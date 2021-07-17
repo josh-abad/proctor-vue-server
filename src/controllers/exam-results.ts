@@ -4,6 +4,7 @@ import ExamResult, { Score } from '@/models/exam-result'
 import ExamAttempt from '@/models/exam-attempt'
 import { authenticate } from '@/utils/middleware'
 import { Answer } from '@/types'
+import { plagiarism } from '@stewartmcgown/grammarly-api'
 
 const examResultsRouter = Router()
 
@@ -13,33 +14,38 @@ examResultsRouter.post('/', authenticate(), async (req, res) => {
   const exam = await Exam.findById(body.examId).select('examItems _id')
   const answers: Answer[] = body.answers
 
-  const scores: Score[] = answers.map(answer => {
-    const examItem = exam?.examItems.find(ei => ei.id === answer.examItem)
-    let points = 0
-    if (examItem && examItem.answer && examItem.questionType !== 'essay') {
-      if (examItem && examItem.questionType !== 'multiple answers') {
-        if (examItem.questionType === 'text' && !examItem.caseSensitive) {
-          points =
-            examItem.answer?.[0].toLowerCase() ===
-            answer.answer[0].toLowerCase()
-              ? examItem.points
-              : 0
+  const scores: Score[] = await Promise.all(
+    answers.map(async answer => {
+      const examItem = exam?.examItems.find(ei => ei.id === answer.examItem)
+      let points = 0
+      if (examItem?.answer) {
+        if (examItem.questionType === 'essay') {
+          const { hasPlagiarism } = await plagiarism(answer.answer[0])
+          answer.hasPlagiarism = hasPlagiarism
+        } else if (examItem.questionType !== 'multiple answers') {
+          if (examItem.questionType === 'text' && !examItem.caseSensitive) {
+            points =
+              examItem.answer?.[0].toLowerCase() ===
+              answer.answer[0].toLowerCase()
+                ? examItem.points
+                : 0
+          } else {
+            points =
+              examItem.answer?.[0] === answer.answer[0] ? examItem.points : 0
+          }
         } else {
-          points =
-            examItem.answer?.[0] === answer.answer[0] ? examItem.points : 0
+          points = examItem.answer.reduce(
+            (a, b) => (answer.answer.includes(b) ? a + 1 : a),
+            0
+          )
         }
-      } else {
-        points = examItem.answer.reduce(
-          (a, b) => (answer.answer.includes(b) ? a + 1 : a),
-          0
-        )
       }
-    }
-    return {
-      points,
-      examItem: examItem?.id as string
-    }
-  })
+      return {
+        points,
+        examItem: examItem?.id as string
+      }
+    })
+  )
 
   const user = req.user
 
@@ -68,7 +74,9 @@ examResultsRouter.post('/', authenticate(), async (req, res) => {
             ei.questionType === 'essay' &&
             answers.some(
               answer =>
-                answer.examItem === ei.id && answer.answer[0]?.length > 0
+                answer.examItem === ei.id &&
+                !answer.hasPlagiarism &&
+                answer.answer[0]?.length > 0
             )
           )
         }) ?? false

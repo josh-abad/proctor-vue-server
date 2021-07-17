@@ -11,7 +11,11 @@ const answerSchema = new Schema({
       type: String,
       required: true
     }
-  ]
+  ],
+  hasPlagiarism: {
+    type: Boolean,
+    default: false
+  }
 })
 
 export interface ExamAttemptDocument extends Document {
