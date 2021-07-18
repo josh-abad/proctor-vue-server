@@ -25,8 +25,8 @@ examResultsRouter.post('/', authenticate(), async (req, res) => {
         } else if (examItem.questionType !== 'multiple answers') {
           if (examItem.questionType === 'text' && !examItem.caseSensitive) {
             points =
-              examItem.answer?.[0].toLowerCase() ===
-              answer.answer[0].toLowerCase()
+              examItem.answer[0]?.toLowerCase() ===
+              answer.answer[0]?.toLowerCase()
                 ? examItem.points
                 : 0
           } else {
