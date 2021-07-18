@@ -4,6 +4,7 @@ import ExamAttempt from '@/models/exam-attempt'
 import { authenticate } from '@/utils/middleware'
 import { AttemptStatus } from '@/types'
 import ExamResult, { Score } from '@/models/exam-result'
+import { getRandom } from '@/utils/random'
 
 const examAttemptsRouter = Router()
 
@@ -47,15 +48,25 @@ examAttemptsRouter.post('/', authenticate(), async (req, res) => {
   const endDate = new Date()
   endDate.setSeconds(endDate.getSeconds() + exam?.duration)
 
+  const processExamItems = () => {
+    if (exam.length < exam.examItems.length || exam.random) {
+      return getRandom(exam.examItems, exam.length)
+    }
+    return exam.examItems
+  }
+
+  const examItems = processExamItems()
+
   const examAttempt = new ExamAttempt({
     user: user?._id,
     status: 'in-progress',
     startDate,
     endDate,
     exam: exam?._id,
-    examTotal: exam?.examItems.reduce((a, b) => a + b.points, 0),
+    examTotal: examItems.reduce((a, b) => a + b.points, 0),
     warnings: 0,
-    pendingGrade: false
+    pendingGrade: false,
+    examItems: examItems.map(e => e.id)
   })
 
   const savedExamAttempt = await examAttempt.save()

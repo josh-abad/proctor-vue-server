@@ -31,6 +31,7 @@ export interface ExamAttemptDocument extends Document {
   warnings: number
   answers: Answer[]
   pendingGrade: boolean
+  examItems: string[]
 }
 
 const examAttemptSchema = new Schema({
@@ -79,7 +80,31 @@ const examAttemptSchema = new Schema({
     type: Boolean,
     required: true
   },
-  answers: [answerSchema]
+  answers: [answerSchema],
+  /**
+   * So this should be type ObjectId, referencing `ExamItem`. But while there's
+   * an exam item schema, it doesn't exist as a model. Using the schema
+   * directly here means I'll have two copies of an exam item. This works like
+   * normal MongoDB reference fields except I can't do
+   * `ExamAttempt.find(...).populate('examItems')`. I have to map the ID to the
+   * actual exam item in the exam object.
+   *
+   * ```
+   * const attempt = await ExamAttempt.findById(...)
+   * const exam = await Exam.findById(attempt.exam)
+   * const examItems = attempt.examItems.map(id => {
+   *     return exam.examItems.find(e => e.id === id))
+   * })
+   * ```
+   *
+   * Or perform the map client-side since `attempt.exam` should be populated.
+   */
+  examItems: [
+    {
+      type: String,
+      required: false
+    }
+  ]
 })
 
 examAttemptSchema.pre(/^find.*/, next => {
