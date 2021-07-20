@@ -63,6 +63,7 @@ export interface ExamDocument extends Document {
   startDate?: Date
   endDate?: Date
   slug: string
+  maxWarnings: number
 }
 
 const examSchema = new Schema({
@@ -107,6 +108,10 @@ const examSchema = new Schema({
   slug: {
     type: String,
     required: true
+  },
+  maxWarnings: {
+    type: Number,
+    default: 5
   }
 })
 

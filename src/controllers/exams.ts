@@ -40,7 +40,8 @@ examsRouter.put(
         slug: slugify(body.label, {
           lower: true,
           strict: true
-        })
+        }),
+        maxWarnings: body.maxWarnings
       },
       { new: true, runValidators: true, context: 'query' }
     )
@@ -122,7 +123,8 @@ examsRouter.post(
       slug: slugify(body.label, {
         lower: true,
         strict: true
-      })
+      }),
+      maxWarnings: body.maxWarnings
     } as ExamDocument)
 
     const savedExam = await exam.save()
