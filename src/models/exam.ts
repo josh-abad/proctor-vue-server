@@ -57,6 +57,7 @@ export interface ExamDocument extends Document {
   length: number
   duration: number
   random: boolean
+  onePage: boolean
   course: string
   maxAttempts: number
   week: number
@@ -84,6 +85,10 @@ const examSchema = new Schema({
     type: Boolean,
     required: false,
     default: false
+  },
+  onePage: {
+    type: Boolean,
+    default: true
   },
   course: {
     type: Schema.Types.ObjectId,
